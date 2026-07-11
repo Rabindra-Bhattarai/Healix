@@ -34,8 +34,8 @@ export default function AppointmentsPage() {
   }
 
   return (
-    <div className="flex flex-col max-w-content">
-      <div className="flex justify-between items-end mb-10">
+    <div className="flex flex-col max-w-content mx-auto">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-10">
         <div>
           <h1 className="font-h1 text-h1 text-on-surface mb-2">My Appointments</h1>
           <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
@@ -45,7 +45,7 @@ export default function AppointmentsPage() {
         </div>
         <Link
           href="/patient/book"
-          className="bg-primary text-on-primary px-6 py-2.5 rounded-xl font-label-sm text-label-sm flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-sm"
+          className="bg-primary text-on-primary px-6 py-2.5 rounded-xl font-label-sm text-label-sm flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-sm self-start"
         >
           <span className="material-symbols-outlined">add</span>
           Add Appointment
@@ -54,7 +54,7 @@ export default function AppointmentsPage() {
 
       <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/20 overflow-hidden">
         <div
-          className={`grid ${appointments.length ? "grid-cols-5" : "grid-cols-4"} px-8 py-4 bg-surface-container-low/50 border-b border-outline-variant/10`}
+          className={`hidden md:grid ${appointments.length ? "grid-cols-5" : "grid-cols-4"} px-8 py-4 bg-surface-container-low/50 border-b border-outline-variant/10`}
         >
           <div className="font-mono-label text-mono-label text-outline uppercase tracking-wider">
             Doctor
@@ -101,15 +101,25 @@ export default function AppointmentsPage() {
             {appointments.map((appt) => (
               <div
                 key={appt.id}
-                className="grid grid-cols-5 items-center px-8 py-6 hover:bg-surface-container-low/30 transition-colors group"
+                className="flex flex-col gap-4 md:grid md:grid-cols-5 md:items-center px-5 sm:px-8 py-5 md:py-6 hover:bg-surface-container-low/30 transition-colors group"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    <span className="material-symbols-outlined">person</span>
+                <div className="flex items-center justify-between md:block">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                      <span className="material-symbols-outlined">person</span>
+                    </div>
+                    <h4 className="font-body-md text-body-md font-semibold text-on-surface">
+                      {appt.doctorName}
+                    </h4>
                   </div>
-                  <h4 className="font-body-md text-body-md font-semibold text-on-surface">
-                    {appt.doctorName}
-                  </h4>
+                  <span
+                    className={`md:hidden inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${STATUS_CLASSES[appt.status]}`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full mr-1.5 ${STATUS_DOT_CLASSES[appt.status]}`}
+                    />
+                    {appt.status}
+                  </span>
                 </div>
                 <div className="font-body-md text-body-md text-on-surface-variant">
                   {appt.specialty}
@@ -122,7 +132,7 @@ export default function AppointmentsPage() {
                     {appt.time}
                   </p>
                 </div>
-                <div className="flex items-center">
+                <div className="hidden md:flex items-center">
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${STATUS_CLASSES[appt.status]}`}
                   >
@@ -132,7 +142,7 @@ export default function AppointmentsPage() {
                     {appt.status}
                   </span>
                 </div>
-                <div className="flex gap-2 justify-end">
+                <div className="flex gap-2 justify-end border-t border-outline-variant/10 pt-3 md:border-0 md:pt-0">
                   <button
                     title="View Details"
                     className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"

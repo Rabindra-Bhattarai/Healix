@@ -19,7 +19,7 @@ export default function ChatInput({
   }
 
   return (
-    <div className="fixed bottom-0 left-sidebar_width right-0 bg-background border-t border-outline-variant/20 p-grid_margin">
+    <div className="fixed bottom-0 left-0 md:left-sidebar_width right-0 bg-background border-t border-outline-variant/20 p-4 sm:p-grid_margin">
       <div className="max-w-5xl mx-auto flex flex-col gap-3">
         <div className="flex gap-2 flex-wrap">
           {SUGGESTED_SYMPTOMS.map((symptom) => (

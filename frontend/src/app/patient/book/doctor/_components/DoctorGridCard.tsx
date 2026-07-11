@@ -2,9 +2,9 @@ import { Doctor } from "@/lib/doctors";
 
 export default function DoctorGridCard({ doctor }: { doctor: Doctor }) {
   return (
-    <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-8 hover:border-primary/40 transition-all flex flex-col h-full">
-      <div className="flex gap-6">
-        <div className="w-24 h-24 shrink-0 rounded-2xl bg-surface-container-high flex items-center justify-center border border-outline-variant/40">
+    <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-5 sm:p-8 hover:border-primary/40 transition-all flex flex-col h-full">
+      <div className="flex gap-4 sm:gap-6">
+        <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-2xl bg-surface-container-high flex items-center justify-center border border-outline-variant/40">
           <span className="material-symbols-outlined text-on-surface-variant text-[40px]">
             person
           </span>

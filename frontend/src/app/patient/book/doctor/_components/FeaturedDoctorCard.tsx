@@ -3,19 +3,19 @@ import { Doctor } from "@/lib/doctors";
 
 export default function FeaturedDoctorCard({ doctor }: { doctor: Doctor }) {
   return (
-    <div className="relative overflow-hidden bg-primary/5 border border-primary/40 rounded-xl p-8">
-      <div className="absolute top-0 left-0 bg-primary text-on-primary px-6 py-2 rounded-br-xl font-label-sm text-label-sm flex items-center gap-2">
+    <div className="relative overflow-hidden bg-primary/5 border border-primary/40 rounded-xl p-5 sm:p-8">
+      <div className="absolute top-0 left-0 bg-primary text-on-primary px-4 sm:px-6 py-2 rounded-br-xl font-label-sm text-label-sm flex items-center gap-2">
         <span className="material-symbols-outlined text-[16px]">verified</span>
         Most Recommended
       </div>
-      <div className="flex flex-col md:flex-row gap-8 mt-6">
-        <div className="w-40 h-40 shrink-0 rounded-2xl bg-surface-container-high flex items-center justify-center border border-outline-variant/40">
+      <div className="flex flex-col md:flex-row gap-6 sm:gap-8 mt-8 sm:mt-6">
+        <div className="w-28 h-28 sm:w-40 sm:h-40 shrink-0 rounded-2xl bg-surface-container-high flex items-center justify-center border border-outline-variant/40">
           <span className="material-symbols-outlined text-on-surface-variant text-[64px]">
             person
           </span>
         </div>
         <div className="flex-1">
-          <div className="flex justify-between items-start mb-4 gap-4">
+          <div className="flex flex-wrap justify-between items-start mb-4 gap-4">
             <div>
               <h3 className="font-h2 text-h2 text-on-surface">{doctor.name}</h3>
               <p className="font-body-lg text-primary font-semibold">{doctor.specialty}</p>

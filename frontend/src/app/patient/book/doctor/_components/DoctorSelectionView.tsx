@@ -15,9 +15,9 @@ export default function DoctorSelectionView() {
   const [featured, ...rest] = doctors;
 
   return (
-    <div className="flex flex-col max-w-content">
+    <div className="flex flex-col max-w-content mx-auto">
       <div className="mb-stack_gap_lg">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <h1 className="font-h1 text-h1 text-on-surface">
             {department?.name ?? "Department"} Specialists
           </h1>

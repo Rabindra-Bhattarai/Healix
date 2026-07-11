@@ -4,7 +4,7 @@ import { DEPARTMENTS } from "@/lib/departments";
 
 export default function DepartmentSelectionPage() {
   return (
-    <div className="flex flex-col max-w-content">
+    <div className="flex flex-col max-w-content mx-auto">
       <div className="mb-stack_gap_lg">
         <div className="flex items-center justify-end mb-4">
           <span className="font-label-sm text-label-sm text-primary uppercase tracking-wider">
@@ -17,10 +17,10 @@ export default function DepartmentSelectionPage() {
       </div>
 
       <section className="mb-grid_margin">
-        <div className="rounded-2xl relative overflow-hidden bg-primary-container p-10 flex flex-col items-start min-h-[320px] justify-center group shadow-xl">
+        <div className="rounded-2xl relative overflow-hidden bg-primary-container p-6 sm:p-10 flex flex-col items-start min-h-[280px] sm:min-h-[320px] justify-center group shadow-xl">
           <div className="relative z-10 max-w-2xl">
             <h1 className="font-h1 text-h1 text-on-primary mb-4">Find the right specialist</h1>
-            <p className="font-body-lg text-primary-fixed-dim mb-8 text-lg">
+            <p className="font-body-lg text-primary-fixed-dim mb-8 text-base sm:text-lg">
               Describe your symptoms and our AI will guide you to the correct department.
             </p>
             <Link

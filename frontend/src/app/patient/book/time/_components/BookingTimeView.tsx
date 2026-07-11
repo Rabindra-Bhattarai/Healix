@@ -41,7 +41,7 @@ export default function BookingTimeView() {
   return (
     <div className="max-w-5xl mx-auto">
       <div className="mb-10">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <h2 className="font-h2 text-h2 text-on-surface">Step 2 of 3: Schedule Date &amp; Time</h2>
           <span className="text-label-sm font-label-sm text-primary uppercase tracking-widest">
             Completed

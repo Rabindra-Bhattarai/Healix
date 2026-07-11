@@ -45,7 +45,7 @@ export default function BookingDetailsView() {
   return (
     <>
       <ReviewHeader />
-      <main className="pt-24 pb-12 px-container_padding flex justify-center">
+      <main className="pt-24 pb-12 px-4 sm:px-container_padding flex justify-center">
         <div className="max-w-[640px] w-full flex flex-col gap-stack_gap_lg">
           <ReviewStepper />
 

@@ -1,11 +1,15 @@
-import { Fragment } from "react";
+"use client";
+
+import { Fragment, useState } from "react";
 import Link from "next/link";
 
 export default function LandingPage() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <>
       <nav className="absolute top-0 left-0 right-0 z-50 bg-white/20 backdrop-blur-md border-b border-white/20">
-        <div className="max-w-content mx-auto px-grid_margin h-16 flex items-center justify-between">
+        <div className="max-w-content mx-auto px-4 sm:px-grid_margin h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="material-symbols-outlined text-on-primary text-[20px]">
@@ -37,7 +41,42 @@ export default function LandingPage() {
               Get Started
             </button>
           </div>
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Toggle menu"
+            className="md:hidden text-on-surface p-1"
+          >
+            <span className="material-symbols-outlined">{menuOpen ? "close" : "menu"}</span>
+          </button>
         </div>
+        {menuOpen && (
+          <div className="md:hidden bg-white/70 backdrop-blur-md border-t border-white/20 px-4 py-4 flex flex-col gap-4">
+            <a
+              className="font-body-md text-on-surface font-medium"
+              href="#services"
+              onClick={() => setMenuOpen(false)}
+            >
+              Services
+            </a>
+            <a
+              className="font-body-md text-on-surface font-medium"
+              href="#how-it-works"
+              onClick={() => setMenuOpen(false)}
+            >
+              How it Works
+            </a>
+            <Link
+              href="/login"
+              className="px-4 py-2 rounded-xl border border-outline-variant text-on-surface font-body-md font-semibold text-center"
+              onClick={() => setMenuOpen(false)}
+            >
+              Sign In
+            </Link>
+            <button className="px-4 py-2 rounded-xl bg-primary text-on-primary font-body-md font-semibold">
+              Get Started
+            </button>
+          </div>
+        )}
       </nav>
 
       <main className="relative">
@@ -52,7 +91,7 @@ export default function LandingPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-surface" />
           </div>
-          <div className="relative z-10 max-w-content mx-auto px-grid_margin text-center pt-24">
+          <div className="relative z-10 max-w-content mx-auto px-4 sm:px-grid_margin text-center pt-24">
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-primary/10 text-primary font-label-sm mb-stack_gap_lg backdrop-blur-sm">
               <span className="material-symbols-outlined text-[16px]">sparkles</span>
               <span>The Future of Healthcare is Here</span>
@@ -77,7 +116,7 @@ export default function LandingPage() {
 
         {/* Services */}
         <section className="py-24 bg-surface" id="services">
-          <div className="max-w-content mx-auto px-grid_margin">
+          <div className="max-w-content mx-auto px-4 sm:px-grid_margin">
             <div className="text-center mb-16">
               <h2 className="font-h2 text-h2 text-on-surface mb-4">
                 Specialized Care for Everyone
@@ -122,7 +161,7 @@ export default function LandingPage() {
 
         {/* How it Works */}
         <section className="py-24 bg-surface-container-low/30" id="how-it-works">
-          <div className="max-w-content mx-auto px-grid_margin">
+          <div className="max-w-content mx-auto px-4 sm:px-grid_margin">
             <div className="text-center mb-16">
               <h2 className="font-h2 text-h2 text-on-surface">
                 Seamless Journey to Wellness
@@ -169,7 +208,7 @@ export default function LandingPage() {
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-white rounded-full blur-[100px]" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-white rounded-full blur-[100px]" />
           </div>
-          <div className="max-w-3xl mx-auto px-grid_margin relative z-10">
+          <div className="max-w-3xl mx-auto px-4 sm:px-grid_margin relative z-10">
             <span className="material-symbols-outlined text-[48px] mb-8 opacity-50">
               format_quote
             </span>
@@ -190,7 +229,7 @@ export default function LandingPage() {
 
         {/* Final CTA */}
         <section className="py-24 text-center">
-          <div className="max-w-content mx-auto px-grid_margin">
+          <div className="max-w-content mx-auto px-4 sm:px-grid_margin">
             <h2 className="font-h2 text-h2 mb-8">Ready to modernize your practice?</h2>
             <button className="px-12 py-4 bg-primary text-on-primary font-body-lg font-semibold rounded-xl shadow-xl hover:scale-105 transition-all">
               Get Started Today
@@ -200,7 +239,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="py-12 border-t border-outline-variant bg-surface text-center">
-        <div className="max-w-content mx-auto px-grid_margin">
+        <div className="max-w-content mx-auto px-4 sm:px-grid_margin">
           <div className="flex flex-col items-center space-y-4">
             <div className="flex items-center space-x-2">
               <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
