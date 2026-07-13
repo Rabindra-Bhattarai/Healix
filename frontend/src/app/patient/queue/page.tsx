@@ -8,7 +8,7 @@ export default function QueuePage() {
   const [appointment, setAppointment] = useState<BookedAppointment | undefined>(undefined);
 
   useEffect(() => {
-    setAppointment(getActiveQueueAppointment());
+    getActiveQueueAppointment().then(setAppointment);
   }, []);
 
   if (!appointment) {

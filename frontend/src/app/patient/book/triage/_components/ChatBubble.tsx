@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { Department } from "@/lib/departments";
 
@@ -5,6 +6,29 @@ export interface ChatMessage {
   role: "ai" | "user";
   text: string;
   recommendedDepartment?: Department;
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function renderWithDepartmentHighlight(text: string, department: Department) {
+  const pattern = new RegExp(`(${escapeRegExp(department.name)})`, "gi");
+  const parts = text.split(pattern);
+
+  return parts.map((part, i) =>
+    part.toLowerCase() === department.name.toLowerCase() ? (
+      <Link
+        key={i}
+        href={`/patient/book/doctor?department=${department.slug}`}
+        className="font-bold text-primary underline underline-offset-2 decoration-primary/40 hover:decoration-primary transition-colors"
+      >
+        {part}
+      </Link>
+    ) : (
+      <Fragment key={i}>{part}</Fragment>
+    )
+  );
 }
 
 export default function ChatBubble({ message }: { message: ChatMessage }) {
@@ -27,7 +51,11 @@ export default function ChatBubble({ message }: { message: ChatMessage }) {
       </div>
       <div className="flex flex-col gap-3 mt-1">
         <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl rounded-tl-sm px-5 py-3">
-          <p className="font-body-md text-body-md text-on-surface">{message.text}</p>
+          <p className="font-body-md text-body-md text-on-surface">
+            {message.recommendedDepartment
+              ? renderWithDepartmentHighlight(message.text, message.recommendedDepartment)
+              : message.text}
+          </p>
         </div>
         {message.recommendedDepartment && (
           <Link

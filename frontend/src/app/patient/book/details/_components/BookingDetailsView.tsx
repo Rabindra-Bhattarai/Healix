@@ -1,37 +1,53 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { findDoctorBySlug } from "@/lib/doctors";
+import { Doctor, findDoctorBySlug, findDoctorIdBySlug } from "@/lib/doctors";
 import { getBookingDraft, clearBookingDraft, BookingDraft } from "@/lib/bookingDraft";
 import { addAppointment } from "@/lib/appointments";
 import ReviewHeader from "@/app/patient/book/details/_components/ReviewHeader";
 import ReviewStepper from "@/app/patient/book/details/_components/ReviewStepper";
 
+const LocationMap = dynamic(() => import("@/app/patient/book/details/_components/LocationMap"), {
+  ssr: false,
+  loading: () => <div className="w-full h-48 bg-surface-container-highest rounded-lg animate-pulse" />,
+});
+
 export default function BookingDetailsView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const doctorSlug = searchParams.get("doctor") ?? "";
-  const doctor = findDoctorBySlug(doctorSlug);
+  const [doctor, setDoctor] = useState<Doctor | undefined>();
+  const [confirming, setConfirming] = useState(false);
 
   const [draft, setDraft] = useState<BookingDraft>({});
   const [reason, setReason] = useState("");
 
   useEffect(() => {
     setDraft(getBookingDraft());
-  }, []);
+    findDoctorBySlug(doctorSlug).then(setDoctor);
+  }, [doctorSlug]);
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (!doctor) return;
-    addAppointment({
-      doctorName: doctor.name,
-      specialty: doctor.specialty,
-      dateLabel: draft.dateLabel ?? "TBD",
-      time: draft.time ?? "TBD",
-      status: "Confirmed",
-    });
-    clearBookingDraft();
-    router.push("/patient/appointments");
+    const doctorId = await findDoctorIdBySlug(doctorSlug);
+    if (!doctorId) return;
+
+    setConfirming(true);
+    try {
+      await addAppointment({
+        doctorId,
+        date: draft.date ?? new Date().toISOString(),
+        dateLabel: draft.dateLabel ?? "TBD",
+        time: draft.time ?? "TBD",
+        reason: reason || undefined,
+      });
+      clearBookingDraft();
+      router.push("/patient/appointments");
+    } finally {
+      setConfirming(false);
+    }
   }
 
   function handleModify() {
@@ -101,24 +117,13 @@ export default function BookingDetailsView() {
                       location_on
                     </span>
                     <span className="font-body-lg text-body-lg font-medium">
-                      St. Mary&apos;s Medical Center
+                      Tribhuvan University Teaching Hospital
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="w-full h-32 bg-surface-container-highest rounded-lg relative overflow-hidden border border-outline-variant/20 flex items-center justify-center">
-                <span className="material-symbols-outlined text-on-surface-variant/40 text-[64px]">
-                  map
-                </span>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-primary px-3 py-1 rounded-full shadow-lg border-2 border-white">
-                    <span className="text-on-primary font-label-sm text-label-sm">
-                      Medical Center
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <LocationMap />
 
               <div className="flex flex-col gap-stack_gap_sm">
                 <label className="font-h3 text-h3 text-on-surface" htmlFor="reason">
@@ -139,9 +144,10 @@ export default function BookingDetailsView() {
             <div className="p-container_padding bg-surface-container-low/20 border-t border-outline-variant/10 flex flex-col gap-stack_gap_md">
               <button
                 onClick={handleConfirm}
-                className="w-full h-12 bg-primary text-on-primary font-h3 text-h3 rounded-lg shadow-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                disabled={confirming}
+                className="w-full h-12 bg-primary text-on-primary font-h3 text-h3 rounded-lg shadow-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
               >
-                Confirm Appointment
+                {confirming ? "Confirming..." : "Confirm Appointment"}
                 <span className="material-symbols-outlined">arrow_forward</span>
               </button>
               <button

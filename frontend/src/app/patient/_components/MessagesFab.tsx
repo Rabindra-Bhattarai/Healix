@@ -9,9 +9,6 @@ export default function MessagesFab() {
       <span className="material-symbols-outlined text-3xl sm:text-4xl group-hover:rotate-12 transition-transform">
         chat_bubble
       </span>
-      <span className="absolute -top-1 -right-1 w-6 h-6 bg-secondary text-white text-[11px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-lg">
-        2
-      </span>
     </Link>
   );
 }

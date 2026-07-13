@@ -1,0 +1,12 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: healix-mongo
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    volumes:
+      - healix-mongo-data:/data/db
+
+volumes:
+  healix-mongo-data:
