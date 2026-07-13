@@ -14,7 +14,7 @@ const NOTIFICATIONS = [
     icon: "description",
     tone: "secondary",
     text: "Medical Vault Update: New Blood Panel report uploaded.",
-    downloadHref: "/patient/vault/report",
+    downloadHref: "/patient/vault",
   },
   {
     icon: "chat",

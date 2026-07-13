@@ -3,33 +3,46 @@
 import { useState } from "react";
 import ChatBubble, { ChatMessage } from "@/app/patient/book/triage/_components/ChatBubble";
 import ChatInput from "@/app/patient/book/triage/_components/ChatInput";
-import { matchDepartmentFromSymptoms } from "@/lib/departments";
+import { getDepartment } from "@/lib/departments";
+import { sendTriageMessage } from "@/lib/triage";
+import { ApiError } from "@/lib/api";
 
 const GREETING: ChatMessage = {
   role: "ai",
   text: "Hi, I'm Healix's AI assistant. Describe your symptoms and I'll help direct you to the right department.",
 };
 
-const NO_MATCH_REPLY: ChatMessage = {
-  role: "ai",
-  text: "I couldn't quite match that to a department. Could you describe your symptoms in a bit more detail?",
-};
-
 export default function TriageView() {
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
+  const [sending, setSending] = useState(false);
 
-  function handleSend(text: string) {
-    const department = matchDepartmentFromSymptoms(text);
+  async function handleSend(text: string) {
+    const userMessage: ChatMessage = { role: "user", text };
+    const history = [...messages, userMessage];
+    setMessages(history);
+    setSending(true);
 
-    const reply: ChatMessage = department
-      ? {
-          role: "ai",
-          text: `Based on what you've described, I'd recommend visiting ${department.name}. You should book this department.`,
-          recommendedDepartment: department,
-        }
-      : NO_MATCH_REPLY;
+    try {
+      // Drop the static greeting - it's UI copy, not a real conversation turn.
+      const apiMessages = history
+        .slice(1)
+        .map((m) => ({ role: m.role, text: m.text }));
 
-    setMessages((prev) => [...prev, { role: "user", text }, reply]);
+      const { reply, recommendedDepartmentSlug } = await sendTriageMessage(apiMessages);
+      const recommendedDepartment = recommendedDepartmentSlug
+        ? await getDepartment(recommendedDepartmentSlug)
+        : undefined;
+
+      setMessages((prev) => [...prev, { role: "ai", text: reply, recommendedDepartment }]);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Sorry, I'm having trouble responding right now. Please try again.";
+      setMessages((prev) => [...prev, { role: "ai", text: message }]);
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -38,8 +51,22 @@ export default function TriageView() {
         {messages.map((message, i) => (
           <ChatBubble key={i} message={message} />
         ))}
+        {sending && (
+          <div className="flex gap-4 max-w-2xl">
+            <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-on-primary text-[20px]">
+                medical_services
+              </span>
+            </div>
+            <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl rounded-tl-sm px-5 py-3 flex items-center gap-1.5 mt-1">
+              <span className="w-1.5 h-1.5 bg-on-surface-variant/50 rounded-full animate-bounce [animation-delay:-0.3s]" />
+              <span className="w-1.5 h-1.5 bg-on-surface-variant/50 rounded-full animate-bounce [animation-delay:-0.15s]" />
+              <span className="w-1.5 h-1.5 bg-on-surface-variant/50 rounded-full animate-bounce" />
+            </div>
+          </div>
+        )}
       </div>
-      <ChatInput onSend={handleSend} />
+      <ChatInput onSend={handleSend} disabled={sending} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import AuthTopNav from "@/components/auth/AuthTopNav";
 import AuthFooter from "@/components/auth/AuthFooter";
+import { api, ApiError } from "@/lib/api";
 
 type Gender = "male" | "female" | "other";
 
@@ -37,19 +38,65 @@ export default function RegisterWizard() {
   const [step, setStep] = useState<1 | 2>(1);
   const [showPassword, setShowPassword] = useState(false);
   const [gender, setGender] = useState<Gender | null>(null);
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
 
   const strength = useMemo(() => getPasswordStrength(password), [password]);
 
-  function handleStep1Submit(e: FormEvent) {
+  async function handleStep1Submit(e: FormEvent) {
     e.preventDefault();
-    setStep(2);
+    setError(null);
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post("/auth/register/start", { name: fullName, email, phone, password });
+      setStep(2);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleVerifySubmit(e: FormEvent) {
+  async function handleVerifySubmit(e: FormEvent) {
     e.preventDefault();
-    router.push("/login");
+    setVerifyError(null);
+    setVerifying(true);
+    try {
+      await api.post("/auth/register/verify", { email, otp: otp.join("") });
+      router.push("/login?registered=success");
+    } catch (err) {
+      setVerifyError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  async function handleResend() {
+    setResendState("sending");
+    setVerifyError(null);
+    try {
+      await api.post("/auth/register/resend", { email });
+      setResendState("sent");
+      setTimeout(() => setResendState("idle"), 3000);
+    } catch (err) {
+      setVerifyError(err instanceof ApiError ? err.message : "Could not resend code.");
+      setResendState("idle");
+    }
   }
 
   function handleOtpChange(index: number, value: string) {
@@ -90,13 +137,28 @@ export default function RegisterWizard() {
                 onSubmit={handleStep1Submit}
                 className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl shadow-[0px_4px_20px_-2px_rgba(136,135,128,0.1)] px-5 sm:px-8 pt-8 pb-10 flex flex-col gap-6"
               >
+                {error && (
+                  <p className="font-label-sm text-label-sm text-error bg-error-container/50 rounded-lg px-3 py-2">
+                    {error}
+                  </p>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input label="Full Name" name="fullName" placeholder="Dr. Julian Moore" required />
+                  <Input
+                    label="Full Name"
+                    name="fullName"
+                    placeholder="Dr. Julian Moore"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
                   <Input
                     label="Phone Number"
                     name="phone"
                     prefix="+977"
                     placeholder="9841000000"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                     required
                   />
                 </div>
@@ -107,6 +169,8 @@ export default function RegisterWizard() {
                     name="email"
                     type="email"
                     placeholder="julian.moore@healix.io"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                   <Input label="Date of Birth" name="dob" type="date" required />
@@ -175,13 +239,25 @@ export default function RegisterWizard() {
                     label="Confirm Password"
                     name="confirmPassword"
                     type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     required
+                    rightSlot={
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="material-symbols-outlined text-[18px] text-on-surface-variant"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? "visibility_off" : "visibility"}
+                      </button>
+                    }
                   />
                 </div>
 
                 <div className="flex flex-col gap-4 items-center pt-2">
-                  <Button type="submit" className="w-full">
-                    Continue
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Creating account..." : "Continue"}
                     <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                   </Button>
                   <p className="font-label-sm text-label-sm text-on-surface-variant text-center">
@@ -219,7 +295,7 @@ export default function RegisterWizard() {
               <div className="flex flex-col gap-2 items-center text-center">
                 <h1 className="font-h1 text-h1 text-on-surface">Verify your identity</h1>
                 <p className="font-body-lg text-body-lg text-on-surface-variant">
-                  Enter the 6-digit code we sent to your phone number.
+                  Enter the 6-digit code we emailed to {email || "your email address"}.
                 </p>
               </div>
 
@@ -227,6 +303,11 @@ export default function RegisterWizard() {
                 onSubmit={handleVerifySubmit}
                 className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl shadow-[0px_4px_20px_-2px_rgba(136,135,128,0.1)] px-5 sm:px-8 pt-8 pb-10 flex flex-col gap-6 items-center"
               >
+                {verifyError && (
+                  <p className="w-full font-label-sm text-label-sm text-error bg-error-container/50 rounded-lg px-3 py-2">
+                    {verifyError}
+                  </p>
+                )}
                 <div className="flex gap-2 sm:gap-3">
                   {otp.map((digit, i) => (
                     <input
@@ -242,16 +323,21 @@ export default function RegisterWizard() {
                 </div>
                 <p className="font-body-md text-body-md text-on-surface-variant">
                   Didn&apos;t receive a code?{" "}
-                  <button type="button" className="text-primary font-semibold">
-                    Resend
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={resendState === "sending"}
+                    className="text-primary font-semibold disabled:opacity-60"
+                  >
+                    {resendState === "sent" ? "Sent!" : resendState === "sending" ? "Sending..." : "Resend"}
                   </button>
                 </p>
                 <div className="flex gap-3 w-full">
                   <Button type="button" variant="secondary" className="flex-1" onClick={() => setStep(1)}>
                     Back
                   </Button>
-                  <Button type="submit" className="flex-1">
-                    Verify &amp; Continue
+                  <Button type="submit" className="flex-1" disabled={verifying}>
+                    {verifying ? "Verifying..." : "Verify & Continue"}
                   </Button>
                 </div>
               </form>

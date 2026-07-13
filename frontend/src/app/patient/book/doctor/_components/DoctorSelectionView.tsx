@@ -1,17 +1,24 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { getDepartment } from "@/lib/departments";
-import { DOCTORS_BY_DEPARTMENT } from "@/lib/doctors";
+import { Department, getDepartment } from "@/lib/departments";
+import { Doctor, getDoctorsByDepartment } from "@/lib/doctors";
 import FeaturedDoctorCard from "@/app/patient/book/doctor/_components/FeaturedDoctorCard";
 import DoctorGridCard from "@/app/patient/book/doctor/_components/DoctorGridCard";
 
 export default function DoctorSelectionView() {
   const searchParams = useSearchParams();
   const departmentSlug = searchParams.get("department") ?? "cardiology";
-  const department = getDepartment(departmentSlug);
-  const doctors = DOCTORS_BY_DEPARTMENT[departmentSlug] ?? [];
+  const [department, setDepartment] = useState<Department | undefined>();
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+
+  useEffect(() => {
+    getDepartment(departmentSlug).then(setDepartment);
+    getDoctorsByDepartment(departmentSlug).then(setDoctors);
+  }, [departmentSlug]);
+
   const [featured, ...rest] = doctors;
 
   return (

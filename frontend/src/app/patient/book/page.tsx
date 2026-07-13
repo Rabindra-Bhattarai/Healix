@@ -1,8 +1,20 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import DepartmentCard from "@/app/patient/book/_components/DepartmentCard";
-import { DEPARTMENTS } from "@/lib/departments";
+import { Department, getDepartments } from "@/lib/departments";
 
 export default function DepartmentSelectionPage() {
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getDepartments()
+      .then(setDepartments)
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="flex flex-col max-w-content mx-auto">
       <div className="mb-stack_gap_lg">
@@ -39,11 +51,11 @@ export default function DepartmentSelectionPage() {
         <div className="flex items-center justify-between mb-stack_gap_lg">
           <h3 className="font-h3 text-h3 text-on-surface">Available Departments</h3>
           <p className="font-label-sm text-on-surface-variant">
-            Showing {DEPARTMENTS.length} major specialists
+            {loading ? "Loading..." : `Showing ${departments.length} major specialists`}
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-stack_gap_lg">
-          {DEPARTMENTS.map((department, i) => (
+          {departments.map((department, i) => (
             <DepartmentCard key={department.slug} department={department} featured={i === 0} />
           ))}
         </div>

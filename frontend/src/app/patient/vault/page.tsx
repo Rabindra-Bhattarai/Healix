@@ -1,35 +1,24 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import PatientSidebar from "@/layouts/PatientSidebar";
 import PatientTopNav from "@/layouts/PatientTopNav";
 import CategoryFilter from "@/app/patient/vault/_components/CategoryFilter";
-import ReportCard, { VaultReport } from "@/app/patient/vault/_components/ReportCard";
-
-const REPORTS: VaultReport[] = [
-  {
-    icon: "bloodtype",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-500",
-    status: "Ready",
-    statusBg: "bg-emerald-50",
-    statusColor: "text-emerald-600",
-    title: "Comprehensive Blood Panel",
-    orderedBy: "Dr. Elena Rodriguez",
-    date: "Oct 24, 2023",
-    reportHref: "/patient/vault/report",
-  },
-  {
-    icon: "radiology",
-    iconBg: "bg-amber-50",
-    iconColor: "text-amber-500",
-    status: "Pending",
-    statusBg: "bg-amber-50",
-    statusColor: "text-amber-600",
-    title: "MRI Scan - Lumbar Spine",
-    orderedBy: "Dr. Marcus Thorne",
-    date: "Oct 22, 2023",
-  },
-];
+import ReportCard from "@/app/patient/vault/_components/ReportCard";
+import { VaultReportRecord, getMyVaultReports } from "@/lib/vault";
 
 export default function VaultPage() {
+  const [reports, setReports] = useState<VaultReportRecord[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    getMyVaultReports().then(setReports);
+  }, []);
+
+  const visibleReports = activeCategory
+    ? reports.filter((r) => r.category === activeCategory)
+    : reports;
+
   return (
     <div className="bg-[#F8F9FA] text-[#1A1A1E] min-h-screen">
       <PatientSidebar />
@@ -60,43 +49,41 @@ export default function VaultPage() {
           </section>
 
           <div className="grid grid-cols-12 gap-8">
-            <CategoryFilter />
+            <CategoryFilter
+              reports={reports}
+              activeCategory={activeCategory}
+              onSelectCategory={setActiveCategory}
+            />
 
             <div className="col-span-12 lg:col-span-9 space-y-8">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold text-[#1A1A1E]">Recent Activity</h3>
-                <p className="text-xs font-medium text-[#6B7280]/60">Showing 2 of 24 records</p>
+                <p className="text-xs font-medium text-[#6B7280]/60">
+                  Showing {visibleReports.length} of {reports.length} records
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {REPORTS.map((report) => (
-                  <ReportCard key={report.title} report={report} />
-                ))}
-              </div>
-
-              <div className="flex items-center justify-center py-12">
-                <nav className="flex items-center gap-3">
-                  <button className="w-12 h-12 flex items-center justify-center rounded-2xl border border-[#E5E7EB]/30 text-[#6B7280] hover:bg-white transition-all">
-                    <span className="material-symbols-outlined">chevron_left</span>
-                  </button>
-                  <button className="w-12 h-12 flex items-center justify-center rounded-2xl bg-[#7F77DD] text-white font-bold shadow-lg shadow-[#7F77DD]/20">
-                    1
-                  </button>
-                  <button className="w-12 h-12 flex items-center justify-center rounded-2xl text-[#6B7280] hover:bg-white transition-all font-medium">
-                    2
-                  </button>
-                  <button className="w-12 h-12 flex items-center justify-center rounded-2xl text-[#6B7280] hover:bg-white transition-all font-medium">
-                    3
-                  </button>
-                  <span className="px-2 text-[#6B7280]/30">•••</span>
-                  <button className="w-12 h-12 flex items-center justify-center rounded-2xl text-[#6B7280] hover:bg-white transition-all font-medium">
-                    8
-                  </button>
-                  <button className="w-12 h-12 flex items-center justify-center rounded-2xl border border-[#E5E7EB]/30 text-[#6B7280] hover:bg-white transition-all">
-                    <span className="material-symbols-outlined">chevron_right</span>
-                  </button>
-                </nav>
-              </div>
+              {visibleReports.length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center py-16 gap-3 bg-white rounded-2xl border border-[#E5E7EB]/30">
+                  <span className="material-symbols-outlined text-[#6B7280]/30 text-5xl">
+                    folder_off
+                  </span>
+                  <p className="font-bold text-[#1A1A1E]">
+                    {reports.length === 0 ? "No documents yet" : "No documents in this category"}
+                  </p>
+                  <p className="text-sm text-[#6B7280] max-w-sm">
+                    {reports.length === 0
+                      ? "Lab results and reports your doctors upload will show up here."
+                      : "Try a different category from the file explorer."}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {visibleReports.map((report) => (
+                    <ReportCard key={report.id} report={report} />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

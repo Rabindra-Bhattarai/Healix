@@ -3,45 +3,61 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getMessageableDoctors, MessageableDoctor } from "@/lib/appointments";
+import { ChatMessage, startConversation, getMessages, sendMessage } from "@/lib/conversations";
 import ConversationList from "@/app/patient/messages/_components/ConversationList";
 import ChatThreadHeader from "@/app/patient/messages/_components/ChatThreadHeader";
 import MessageBubble from "@/app/patient/messages/_components/MessageBubble";
 import ChatComposer from "@/app/patient/messages/_components/ChatComposer";
-import { ChatMessage, buildSeedConversation } from "@/app/patient/messages/_components/types";
 
 export default function MessagesPage() {
   const [doctors, setDoctors] = useState<MessageableDoctor[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [conversationIds, setConversationIds] = useState<Record<string, string>>({});
   const [threads, setThreads] = useState<Record<string, ChatMessage[]>>({});
   const [mobileView, setMobileView] = useState<"list" | "thread">("list");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const messageable = getMessageableDoctors();
-    setDoctors(messageable);
-    if (messageable.length > 0) {
-      setSelected(messageable[0].doctorName);
-      setThreads({ [messageable[0].doctorName]: buildSeedConversation() });
-    }
+    getMessageableDoctors()
+      .then((messageable) => {
+        setDoctors(messageable);
+        if (messageable.length > 0) {
+          void openThread(messageable[0].doctorId);
+        }
+      })
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleSelect(doctorName: string) {
-    setSelected(doctorName);
-    setThreads((prev) => (prev[doctorName] ? prev : { ...prev, [doctorName]: buildSeedConversation() }));
+  async function openThread(doctorId: string) {
+    setSelected(doctorId);
+    const conversationId = conversationIds[doctorId] ?? (await startConversation(doctorId));
+    setConversationIds((prev) => ({ ...prev, [doctorId]: conversationId }));
+    if (!threads[doctorId]) {
+      const messages = await getMessages(conversationId);
+      setThreads((prev) => ({ ...prev, [doctorId]: messages }));
+    }
+  }
+
+  function handleSelect(doctorId: string) {
+    void openThread(doctorId);
     setMobileView("thread");
   }
 
-  function handleSend(text: string) {
+  async function handleSend(text: string) {
     if (!selected) return;
-    const newMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      sender: "patient",
-      text,
-      time: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
-    };
+    const conversationId = conversationIds[selected];
+    if (!conversationId) return;
+
+    const message = await sendMessage(conversationId, text);
     setThreads((prev) => ({
       ...prev,
-      [selected]: [...(prev[selected] ?? []), newMessage],
+      [selected]: [...(prev[selected] ?? []), message],
     }));
+  }
+
+  if (loading) {
+    return null;
   }
 
   if (doctors.length === 0) {
@@ -65,7 +81,7 @@ export default function MessagesPage() {
     );
   }
 
-  const activeDoctor = doctors.find((d) => d.doctorName === selected) ?? doctors[0];
+  const activeDoctor = doctors.find((d) => d.doctorId === selected) ?? doctors[0];
   const messages = (selected && threads[selected]) || [];
   const lastMessage = messages[messages.length - 1];
 

@@ -1,11 +1,21 @@
-const CATEGORIES = [
-  { icon: "folder", label: "All Reports", count: 24, active: true },
-  { icon: "biotech", label: "Lab Results", count: 12, active: false },
-  { icon: "prescriptions", label: "Prescriptions", count: 8, active: false },
-  { icon: "image", label: "Imaging", count: 4, active: false },
+import { VaultReportRecord } from "@/lib/vault";
+
+const CATEGORY_META: { icon: string; label: string; category: string | null }[] = [
+  { icon: "folder", label: "All Reports", category: null },
+  { icon: "biotech", label: "Lab Results", category: "Lab Results" },
+  { icon: "prescriptions", label: "Prescriptions", category: "Prescriptions" },
+  { icon: "image", label: "Imaging", category: "Imaging" },
 ];
 
-export default function CategoryFilter() {
+export default function CategoryFilter({
+  reports,
+  activeCategory,
+  onSelectCategory,
+}: {
+  reports: VaultReportRecord[];
+  activeCategory: string | null;
+  onSelectCategory: (category: string | null) => void;
+}) {
   return (
     <aside className="col-span-12 lg:col-span-3 space-y-8">
       <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] border border-[#E5E7EB]/30">
@@ -13,22 +23,29 @@ export default function CategoryFilter() {
           File Explorer
         </h4>
         <nav className="flex flex-col gap-2">
-          {CATEGORIES.map((category) => (
-            <button
-              key={category.label}
-              className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm transition-all ${
-                category.active
-                  ? "bg-[#7F77DD]/5 text-[#7F77DD] font-bold"
-                  : "text-[#6B7280] hover:bg-gray-50 font-medium"
-              }`}
-            >
-              <span className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[20px]">{category.icon}</span>
-                {category.label}
-              </span>
-              <span className="text-[10px] opacity-60">{category.count}</span>
-            </button>
-          ))}
+          {CATEGORY_META.map((item) => {
+            const count = item.category
+              ? reports.filter((r) => r.category === item.category).length
+              : reports.length;
+            const active = activeCategory === item.category;
+            return (
+              <button
+                key={item.label}
+                onClick={() => onSelectCategory(item.category)}
+                className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm transition-all ${
+                  active
+                    ? "bg-[#7F77DD]/5 text-[#7F77DD] font-bold"
+                    : "text-[#6B7280] hover:bg-gray-50 font-medium"
+                }`}
+              >
+                <span className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                  {item.label}
+                </span>
+                <span className="text-[10px] opacity-60">{count}</span>
+              </button>
+            );
+          })}
         </nav>
       </div>
 

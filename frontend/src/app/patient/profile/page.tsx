@@ -1,25 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ProfileHeaderCard from "@/app/patient/profile/_components/ProfileHeaderCard";
 import PersonalInfoCard from "@/app/patient/profile/_components/PersonalInfoCard";
 import SecurityAccountCard from "@/app/patient/profile/_components/SecurityAccountCard";
 import MedicalInfoCard from "@/app/patient/profile/_components/MedicalInfoCard";
 import EditProfileModal from "@/app/patient/profile/_components/EditProfileModal";
 import { INITIAL_PROFILE, ProfileData } from "@/app/patient/profile/_components/types";
+import { getSession } from "@/lib/auth";
+import { sessionUserToProfile, updateProfile } from "@/lib/profile";
+import { uploadAvatar } from "@/lib/security";
+import { fileToCompressedDataUrl } from "@/lib/image";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData>(INITIAL_PROFILE);
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
-  function handleSave(next: ProfileData) {
-    setProfile(next);
+  useEffect(() => {
+    const session = getSession();
+    if (session) {
+      setProfile(sessionUserToProfile(session.user));
+      setAvatarUrl(session.user.avatarUrl);
+      setTwoFactorEnabled(Boolean(session.user.twoFactorEnabled));
+    }
+  }, []);
+
+  async function handleSave(next: ProfileData) {
+    const saved = await updateProfile(next);
+    setProfile(saved);
     setModalOpen(false);
+  }
+
+  async function handleAvatarChange(file: File) {
+    const dataUrl = await fileToCompressedDataUrl(file);
+    const user = await uploadAvatar(dataUrl);
+    setAvatarUrl(user.avatarUrl);
   }
 
   return (
     <div className="max-w-content mx-auto">
-      <ProfileHeaderCard name={profile.fullName} onEditClick={() => setModalOpen(true)} />
+      <ProfileHeaderCard
+        name={profile.fullName}
+        avatarUrl={avatarUrl}
+        onEditClick={() => setModalOpen(true)}
+        onAvatarChange={handleAvatarChange}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-grid_gutter">
         <div className="lg:col-span-8 space-y-grid_gutter">
@@ -29,7 +56,10 @@ export default function ProfilePage() {
             address={profile.address}
             onEditClick={() => setModalOpen(true)}
           />
-          <SecurityAccountCard />
+          <SecurityAccountCard
+            twoFactorEnabled={twoFactorEnabled}
+            onTwoFactorChange={setTwoFactorEnabled}
+          />
         </div>
 
         <div className="lg:col-span-4">

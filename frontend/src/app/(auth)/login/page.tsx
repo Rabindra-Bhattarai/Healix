@@ -1,7 +1,16 @@
 "use client";
 
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from "@react-oauth/google";
+import { api, ApiError } from "@/lib/api";
+import { saveSession, roleHomePath, Session } from "@/lib/auth";
+import { loginWithGoogle, loginWithFacebook } from "@/lib/sso";
+import { loadFacebookSdk, facebookLogin } from "@/lib/facebookSdk";
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+const FACEBOOK_APP_ID = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID ?? "";
 
 const FEATURES = [
   {
@@ -21,12 +30,86 @@ const FEATURES = [
   },
 ];
 
-export default function LoginPage() {
-  const router = useRouter();
+type LoginResponse = Session | { requiresTwoFactor: true; email: string };
 
-  function handleSubmit(e: React.FormEvent) {
+function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const resetSuccess = searchParams.get("reset") === "success";
+  const registeredSuccess = searchParams.get("registered") === "success";
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [awaitingTwoFactor, setAwaitingTwoFactor] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    router.push("/patient");
+    setError(null);
+    setLoading(true);
+    try {
+      const result = await api.post<LoginResponse>("/auth/login", { email, password });
+      if ("requiresTwoFactor" in result) {
+        setAwaitingTwoFactor(true);
+        return;
+      }
+      saveSession(result);
+      router.push(roleHomePath(result.user.role));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerifyTwoFactor(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const result = await api.post<Session>("/auth/login/verify-2fa", { email, otp });
+      saveSession(result);
+      router.push(roleHomePath(result.user.role));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleSuccess(response: CredentialResponse) {
+    if (!response.credential) return;
+    setError(null);
+    setSsoLoading(true);
+    try {
+      const { token, user } = await loginWithGoogle(response.credential);
+      saveSession({ token, user });
+      router.push(roleHomePath(user.role));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Google sign-in failed. Please try again.");
+    } finally {
+      setSsoLoading(false);
+    }
+  }
+
+  async function handleFacebookClick() {
+    if (!FACEBOOK_APP_ID) return;
+    setError(null);
+    setSsoLoading(true);
+    try {
+      await loadFacebookSdk(FACEBOOK_APP_ID);
+      const accessToken = await facebookLogin();
+      const { token, user } = await loginWithFacebook(accessToken);
+      saveSession({ token, user });
+      router.push(roleHomePath(user.role));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Facebook sign-in failed. Please try again.");
+    } finally {
+      setSsoLoading(false);
+    }
   }
 
   return (
@@ -78,15 +161,86 @@ export default function LoginPage() {
               </p>
             </div>
 
+            {awaitingTwoFactor ? (
+              <form onSubmit={handleVerifyTwoFactor} className="space-y-stack_gap_md">
+                <p className="font-body-md text-body-md text-on-surface-variant">
+                  We&apos;ve emailed a 6-digit code to{" "}
+                  <span className="font-semibold text-on-surface">{email}</span>. Enter it below
+                  to finish signing in.
+                </p>
+                {error && (
+                  <p className="font-label-sm text-label-sm text-error bg-error-container/50 rounded-lg px-3 py-2">
+                    {error}
+                  </p>
+                )}
+                <div className="space-y-1">
+                  <label
+                    className="font-label-sm text-label-sm text-on-surface-variant"
+                    htmlFor="otp"
+                  >
+                    Verification Code
+                  </label>
+                  <input
+                    id="otp"
+                    name="otp"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    required
+                    placeholder="123456"
+                    className="w-full h-10 px-3 bg-surface-container-lowest border-[0.5px] border-outline-variant/50 rounded-lg font-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none tracking-[0.3em] text-center"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-10 bg-primary text-on-primary font-body-md font-semibold rounded-lg hover:opacity-90 active:scale-95 transition-all disabled:opacity-60"
+                >
+                  {loading ? "Verifying..." : "Verify & Sign In"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAwaitingTwoFactor(false);
+                    setOtp("");
+                    setError(null);
+                  }}
+                  className="w-full text-center font-label-sm text-label-sm text-on-surface-variant hover:underline"
+                >
+                  Back to sign in
+                </button>
+              </form>
+            ) : (
+              <>
             <form onSubmit={handleSubmit} className="space-y-stack_gap_md">
+              {resetSuccess && !error && (
+                <p className="font-label-sm text-label-sm text-secondary bg-secondary-container/50 rounded-lg px-3 py-2">
+                  Password reset successful. Please sign in with your new password.
+                </p>
+              )}
+              {registeredSuccess && !error && (
+                <p className="font-label-sm text-label-sm text-secondary bg-secondary-container/50 rounded-lg px-3 py-2">
+                  Account created successfully. Please sign in.
+                </p>
+              )}
+              {error && (
+                <p className="font-label-sm text-label-sm text-error bg-error-container/50 rounded-lg px-3 py-2">
+                  {error}
+                </p>
+              )}
               <div className="space-y-1">
                 <label className="font-label-sm text-label-sm text-on-surface-variant" htmlFor="id">
-                  Email or Phone
+                  Email Address
                 </label>
                 <input
                   id="id"
                   name="id"
-                  type="text"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   placeholder="name@clinic.com"
                   className="w-full h-10 px-3 bg-surface-container-lowest border-[0.5px] border-outline-variant/50 rounded-lg font-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                 />
@@ -99,23 +253,42 @@ export default function LoginPage() {
                   >
                     Password
                   </label>
-                  <a className="font-label-sm text-label-sm text-primary hover:underline" href="#">
+                  <Link
+                    href="/forgot-password"
+                    className="font-label-sm text-label-sm text-primary hover:underline"
+                  >
                     Forgot?
-                  </a>
+                  </Link>
                 </div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  className="w-full h-10 px-3 bg-surface-container-lowest border-[0.5px] border-outline-variant/50 rounded-lg font-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="••••••••"
+                    className="w-full h-10 pl-3 pr-10 bg-surface-container-lowest border-[0.5px] border-outline-variant/50 rounded-lg font-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {showPassword ? "visibility_off" : "visibility"}
+                    </span>
+                  </button>
+                </div>
               </div>
               <button
                 type="submit"
-                className="w-full h-10 bg-primary text-on-primary font-body-md font-semibold rounded-lg hover:opacity-90 active:scale-95 transition-all"
+                disabled={loading}
+                className="w-full h-10 bg-primary text-on-primary font-body-md font-semibold rounded-lg hover:opacity-90 active:scale-95 transition-all disabled:opacity-60"
               >
-                Login
+                {loading ? "Signing in..." : "Login"}
               </button>
             </form>
 
@@ -128,16 +301,35 @@ export default function LoginPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-stack_gap_md">
-              <button className="flex items-center justify-center h-10 border-[0.5px] border-outline-variant/50 rounded-lg hover:bg-surface-container transition-colors active:scale-95">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  alt="Google"
-                  className="w-4 h-4 mr-2"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpnEl1mgZPttZEUkksfV4JyHS8FbWEuu05TZ8v-3Bi8AWOj-6BZQZcDfgu8nDtZW2ABV6h31Vezlf8s_0crBKRWE7XtRyhGtDnG5f4OznpqvPd5exauYZXetXnDG83gNQymU_ndNQUoModluZ1rNiYd7Kbs0flNU8_K78EM0MjSmE2XClUHNBVOm8dqAq3MG0hkr1_cLjsRIdvWAVgt-c9OfB542moCpZN1yHHWFlPjva9XNHnhc9sEC9Dc8XWTda2_c7QEtVLwxo"
-                />
-                <span className="font-body-md text-on-surface">Google</span>
-              </button>
-              <button className="flex items-center justify-center h-10 border-[0.5px] border-outline-variant/50 rounded-lg hover:bg-surface-container transition-colors active:scale-95">
+              {GOOGLE_CLIENT_ID ? (
+                <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID} locale="en">
+                  <div className="[&>div]:!w-full">
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={() => setError("Google sign-in failed. Please try again.")}
+                      theme="outline"
+                      shape="rectangular"
+                      size="large"
+                      width="180"
+                    />
+                  </div>
+                </GoogleOAuthProvider>
+              ) : (
+                <button
+                  disabled
+                  title="Google sign-in is not configured yet"
+                  className="flex items-center justify-center h-10 border-[0.5px] border-outline-variant/50 rounded-lg text-on-surface-variant/40 cursor-not-allowed"
+                >
+                  <span className="font-body-md">Google</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleFacebookClick}
+                disabled={!FACEBOOK_APP_ID || ssoLoading}
+                title={FACEBOOK_APP_ID ? undefined : "Facebook sign-in is not configured yet"}
+                className="flex items-center justify-center h-10 border-[0.5px] border-outline-variant/50 rounded-lg hover:bg-surface-container transition-colors active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
                 <svg className="w-5 h-5 mr-2 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>
@@ -151,6 +343,8 @@ export default function LoginPage() {
                 Create account
               </Link>
             </p>
+              </>
+            )}
           </div>
         </div>
       </main>
@@ -160,5 +354,13 @@ export default function LoginPage() {
         <div className="absolute bottom-[5%] right-[5%] w-[30%] h-[30%] bg-secondary-container/10 blur-[100px] rounded-full" />
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
