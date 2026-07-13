@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import LogoutConfirmModal from "@/layouts/_components/LogoutConfirmModal";
 import { useMobileNav } from "@/layouts/_components/MobileNavContext";
+import { clearSession } from "@/lib/auth";
 
 const NAV_ITEMS = [
   { href: "/patient", label: "Dashboard", icon: "dashboard" },
@@ -81,7 +82,10 @@ export default function PatientSidebar() {
         {logoutOpen && (
           <LogoutConfirmModal
             onCancel={() => setLogoutOpen(false)}
-            onConfirm={() => router.push("/login")}
+            onConfirm={() => {
+              clearSession();
+              router.push("/login");
+            }}
           />
         )}
       </aside>
