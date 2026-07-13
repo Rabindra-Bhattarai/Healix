@@ -1,3 +1,5 @@
+import { api } from "@/lib/api";
+
 export type AppointmentStatus = "Confirmed" | "Cancelled" | "Completed";
 
 export interface BookedAppointment {
@@ -8,57 +10,85 @@ export interface BookedAppointment {
   time: string;
   status: AppointmentStatus;
   queueToken: string;
-}
-
-const STORAGE_KEY = "healix.appointments";
-
-export function getAppointments(): BookedAppointment[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as BookedAppointment[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function addAppointment(
-  appointment: Omit<BookedAppointment, "id" | "queueToken">,
-): BookedAppointment {
-  const existing = getAppointments();
-  const queueToken = String(42 + existing.length).padStart(3, "0");
-  const withId: BookedAppointment = { ...appointment, id: crypto.randomUUID(), queueToken };
-  const next = [withId, ...existing];
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  }
-  return withId;
-}
-
-export function cancelAppointment(id: string): void {
-  const next = getAppointments().map((a) => (a.id === id ? { ...a, status: "Cancelled" as const } : a));
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  }
-}
-
-export function getActiveQueueAppointment(): BookedAppointment | undefined {
-  return getAppointments().find((a) => a.status === "Confirmed");
+  reason?: string;
 }
 
 export interface MessageableDoctor {
+  doctorId: string;
   doctorName: string;
   specialty: string;
 }
 
-export function getMessageableDoctors(): MessageableDoctor[] {
-  const seen = new Set<string>();
-  const doctors: MessageableDoctor[] = [];
-  for (const appt of getAppointments()) {
-    if (appt.status === "Cancelled") continue;
-    if (seen.has(appt.doctorName)) continue;
-    seen.add(appt.doctorName);
-    doctors.push({ doctorName: appt.doctorName, specialty: appt.specialty });
-  }
-  return doctors;
+interface AppointmentRecord {
+  _id: string;
+  doctor: string;
+  doctorName: string;
+  specialty: string;
+  dateLabel: string;
+  time: string;
+  status: AppointmentStatus;
+  queueToken: string;
+  reason?: string;
+}
+
+function toBooked(record: AppointmentRecord): BookedAppointment {
+  return {
+    id: record._id,
+    doctorName: record.doctorName,
+    specialty: record.specialty,
+    dateLabel: record.dateLabel,
+    time: record.time,
+    status: record.status,
+    queueToken: record.queueToken,
+    reason: record.reason,
+  };
+}
+
+export async function getAppointments(): Promise<BookedAppointment[]> {
+  const { appointments } = await api.get<{ appointments: AppointmentRecord[] }>("/appointments/me");
+  return appointments.map(toBooked);
+}
+
+export async function addAppointment(input: {
+  doctorId: string;
+  date: string;
+  dateLabel: string;
+  time: string;
+  reason?: string;
+}): Promise<BookedAppointment> {
+  const { appointment } = await api.post<{ appointment: AppointmentRecord }>("/appointments", input);
+  return toBooked(appointment);
+}
+
+export async function cancelAppointment(id: string): Promise<void> {
+  await api.patch(`/appointments/${id}/cancel`);
+}
+
+export async function rescheduleAppointment(
+  id: string,
+  input: { date: string; dateLabel: string; time: string }
+): Promise<BookedAppointment> {
+  const { appointment } = await api.patch<{ appointment: AppointmentRecord }>(
+    `/appointments/${id}/reschedule`,
+    input
+  );
+  return toBooked(appointment);
+}
+
+export async function getActiveQueueAppointment(): Promise<BookedAppointment | undefined> {
+  const appointments = await getAppointments();
+  return appointments.find((a) => a.status === "Confirmed");
+}
+
+export async function getMessageableDoctors(): Promise<MessageableDoctor[]> {
+  const { appointments } = await api.get<{ appointments: AppointmentRecord[] }>("/appointments/me");
+  const seen = new Map<string, MessageableDoctor>();
+  appointments
+    .filter((a) => a.status !== "Cancelled")
+    .forEach((a) => {
+      if (!seen.has(a.doctor)) {
+        seen.set(a.doctor, { doctorId: a.doctor, doctorName: a.doctorName, specialty: a.specialty });
+      }
+    });
+  return Array.from(seen.values());
 }
