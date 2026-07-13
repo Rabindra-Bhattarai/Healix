@@ -8,6 +8,8 @@ import {
   cancelAppointment,
   getAppointments,
 } from "@/lib/appointments";
+import AppointmentDetailsModal from "@/app/patient/appointments/_components/AppointmentDetailsModal";
+import RescheduleModal from "@/app/patient/appointments/_components/RescheduleModal";
 
 const STATUS_CLASSES: Record<AppointmentStatus, string> = {
   Confirmed: "bg-secondary/10 text-secondary border-secondary/20",
@@ -23,14 +25,20 @@ const STATUS_DOT_CLASSES: Record<AppointmentStatus, string> = {
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<BookedAppointment[]>([]);
+  const [viewing, setViewing] = useState<BookedAppointment | null>(null);
+  const [rescheduling, setRescheduling] = useState<BookedAppointment | null>(null);
 
   useEffect(() => {
-    setAppointments(getAppointments());
+    getAppointments().then(setAppointments);
   }, []);
 
-  function handleCancel(id: string) {
-    cancelAppointment(id);
-    setAppointments(getAppointments());
+  async function handleCancel(id: string) {
+    await cancelAppointment(id);
+    setAppointments(await getAppointments());
+  }
+
+  async function refreshAppointments() {
+    setAppointments(await getAppointments());
   }
 
   return (
@@ -145,20 +153,24 @@ export default function AppointmentsPage() {
                 <div className="flex gap-2 justify-end border-t border-outline-variant/10 pt-3 md:border-0 md:pt-0">
                   <button
                     title="View Details"
+                    onClick={() => setViewing(appt)}
                     className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
                   >
                     <span className="material-symbols-outlined">visibility</span>
                   </button>
                   <button
-                    title="Reschedule"
-                    className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                    title={appt.status === "Confirmed" ? "Reschedule" : "Only confirmed appointments can be rescheduled"}
+                    onClick={() => appt.status === "Confirmed" && setRescheduling(appt)}
+                    disabled={appt.status !== "Confirmed"}
+                    className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                   >
                     <span className="material-symbols-outlined">event_repeat</span>
                   </button>
                   <button
                     title="Cancel Appointment"
                     onClick={() => handleCancel(appt.id)}
-                    className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/5 rounded-lg transition-colors"
+                    disabled={appt.status === "Cancelled"}
+                    className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                   >
                     <span className="material-symbols-outlined">delete</span>
                   </button>
@@ -168,6 +180,17 @@ export default function AppointmentsPage() {
           </div>
         )}
       </div>
+
+      {viewing && (
+        <AppointmentDetailsModal appointment={viewing} onClose={() => setViewing(null)} />
+      )}
+      {rescheduling && (
+        <RescheduleModal
+          appointment={rescheduling}
+          onClose={() => setRescheduling(null)}
+          onRescheduled={refreshAppointments}
+        />
+      )}
     </div>
   );
 }
