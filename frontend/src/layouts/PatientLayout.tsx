@@ -1,10 +1,11 @@
 "use client";
 
-import { ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { ReactNode, useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import PatientSidebar from "@/layouts/PatientSidebar";
 import PatientTopNav from "@/layouts/PatientTopNav";
 import { MobileNavProvider } from "@/layouts/_components/MobileNavContext";
+import { getSession } from "@/lib/auth";
 
 const FULL_BLEED_ROUTES = new Set([
   "/patient/book/details",
@@ -14,6 +15,19 @@ const FULL_BLEED_ROUTES = new Set([
 
 export default function PatientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [authorized, setAuthorized] = useState(false);
+
+  useEffect(() => {
+    const session = getSession();
+    if (!session || session.user.role !== "patient") {
+      router.replace("/login");
+      return;
+    }
+    setAuthorized(true);
+  }, [router]);
+
+  if (!authorized) return null;
 
   if (pathname && FULL_BLEED_ROUTES.has(pathname)) {
     return (

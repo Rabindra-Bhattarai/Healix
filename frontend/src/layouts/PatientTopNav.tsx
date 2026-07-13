@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import NotificationsPopover from "@/layouts/_components/NotificationsPopover";
 import { useMobileNav } from "@/layouts/_components/MobileNavContext";
+import { getSession } from "@/lib/auth";
 
 const TITLES: Record<string, string> = {
   "/patient": "Dashboard",
@@ -23,7 +24,21 @@ export default function PatientTopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [notifOpen, setNotifOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
   const { setOpen: setMobileNavOpen } = useMobileNav();
+
+  // Re-read on every route change so a photo uploaded on /patient/profile
+  // shows up here as soon as the user navigates elsewhere.
+  useEffect(() => {
+    setAvatarUrl(getSession()?.user.avatarUrl);
+  }, [pathname]);
+
+  const avatarContent = avatarUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+  ) : (
+    <span className="material-symbols-outlined text-[20px] text-on-surface-variant">person</span>
+  );
 
   const menuButton = (
     <button
@@ -78,7 +93,7 @@ export default function PatientTopNav() {
           {menuButton}
           <div className="flex items-center gap-1 font-label-sm text-label-sm font-medium text-on-surface-variant min-w-0">
             <span className="material-symbols-outlined text-[18px] shrink-0">location_on</span>
-            <span className="truncate">Austin Medical Center</span>
+            <span className="truncate">Tribhuvan University Teaching Hospital</span>
             <span className="material-symbols-outlined text-[16px] ml-1 hidden sm:inline">
               expand_more
             </span>
@@ -99,9 +114,7 @@ export default function PatientTopNav() {
             aria-label="Profile"
             className="size-8 rounded-full border border-outline-variant/30 bg-surface-container-high flex items-center justify-center overflow-hidden hover:border-primary transition-colors shrink-0"
           >
-            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
-              person
-            </span>
+            {avatarContent}
           </Link>
         </div>
       </header>
@@ -127,9 +140,7 @@ export default function PatientTopNav() {
             aria-label="Profile"
             className="size-8 rounded-full border border-outline-variant/30 bg-surface-container-high flex items-center justify-center overflow-hidden hover:border-primary transition-colors shrink-0"
           >
-            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
-              person
-            </span>
+            {avatarContent}
           </Link>
         </div>
       </header>
