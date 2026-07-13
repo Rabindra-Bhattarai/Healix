@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Doctor } from "@/lib/doctors";
 
 export default function DoctorGridCard({ doctor }: { doctor: Doctor }) {
@@ -26,9 +27,12 @@ export default function DoctorGridCard({ doctor }: { doctor: Doctor }) {
           <span className="material-symbols-outlined text-[20px]">history</span>
           {doctor.experienceYears}+ Yrs Exp
         </span>
-        <button className="w-full py-2.5 border border-primary text-primary rounded-xl font-semibold hover:bg-primary/5 active:scale-95 transition-all">
-          View Profile
-        </button>
+        <Link
+          href={`/patient/book/time?doctor=${doctor.slug}`}
+          className="w-full py-2.5 border border-primary text-primary rounded-xl font-semibold hover:bg-primary/5 active:scale-95 transition-all text-center"
+        >
+          Book Appointment
+        </Link>
       </div>
     </div>
   );
