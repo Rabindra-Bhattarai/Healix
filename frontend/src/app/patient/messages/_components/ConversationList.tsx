@@ -9,7 +9,7 @@ export default function ConversationList({
 }: {
   doctors: MessageableDoctor[];
   selected: string | null;
-  onSelect: (doctorName: string) => void;
+  onSelect: (doctorId: string) => void;
   previewText: string;
   visible?: boolean;
 }) {
@@ -31,11 +31,11 @@ export default function ConversationList({
       </div>
       <div className="flex-1 overflow-y-auto">
         {doctors.map((doctor) => {
-          const active = doctor.doctorName === selected;
+          const active = doctor.doctorId === selected;
           return (
             <button
-              key={doctor.doctorName}
-              onClick={() => onSelect(doctor.doctorName)}
+              key={doctor.doctorId}
+              onClick={() => onSelect(doctor.doctorId)}
               className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${
                 active ? "bg-primary/10 border-l-2 border-primary" : "hover:bg-surface-container-low"
               }`}
