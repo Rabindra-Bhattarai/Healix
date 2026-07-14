@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { OAuth2Client } from "google-auth-library";
 import User from "../models/User";
+import Doctor from "../models/Doctor";
 import PendingRegistration from "../models/PendingRegistration";
 import { signToken } from "../utils/jwt";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -130,6 +131,15 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   const match = await bcrypt.compare(password, user.passwordHash);
   if (!match) {
     return res.status(401).json({ message: "Invalid email or password" });
+  }
+
+  if (user.role === "doctor") {
+    const doctor = await Doctor.findOne({ user: user._id });
+    if (doctor?.isBlocked) {
+      return res.status(403).json({
+        message: "Your account has been suspended. Please contact the hospital administration.",
+      });
+    }
   }
 
   if (user.twoFactorEnabled) {
