@@ -2,16 +2,25 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookedAppointment, getActiveQueueAppointment } from "@/lib/appointments";
+import { QueueStatus, getQueueStatus } from "@/lib/appointments";
+
+const REFRESH_INTERVAL_MS = 20000;
 
 export default function QueuePage() {
-  const [appointment, setAppointment] = useState<BookedAppointment | undefined>(undefined);
+  const [queue, setQueue] = useState<QueueStatus | null | undefined>(undefined);
 
   useEffect(() => {
-    getActiveQueueAppointment().then(setAppointment);
+    function refresh() {
+      getQueueStatus().then(setQueue);
+    }
+    refresh();
+    const interval = setInterval(refresh, REFRESH_INTERVAL_MS);
+    return () => clearInterval(interval);
   }, []);
 
-  if (!appointment) {
+  if (queue === undefined) return null;
+
+  if (!queue) {
     return (
       <section className="flex flex-col items-center justify-center py-24 max-w-2xl mx-auto w-full text-center">
         <div className="w-32 h-32 bg-primary/5 rounded-full flex items-center justify-center mb-8">
@@ -42,8 +51,22 @@ export default function QueuePage() {
             Your Queue Token
           </span>
           <h1 className="text-[64px] sm:text-[90px] md:text-[120px] font-extrabold text-primary leading-none tracking-tighter">
-            #{appointment.queueToken}
+            #{queue.queueToken}
           </h1>
+        </div>
+
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 flex flex-col items-center gap-1">
+          <span className="material-symbols-outlined text-primary text-[32px]">groups</span>
+          {queue.peopleAhead === 0 ? (
+            <p className="font-h3 text-h3 text-primary">You&apos;re next!</p>
+          ) : (
+            <p className="font-h3 text-h3 text-primary">
+              {queue.peopleAhead} {queue.peopleAhead === 1 ? "person" : "people"} ahead of you
+            </p>
+          )}
+          <p className="font-label-sm text-label-sm text-on-surface-variant">
+            Updates automatically as the queue moves
+          </p>
         </div>
 
         <div className="h-px w-full bg-outline-variant/20" />
@@ -53,13 +76,13 @@ export default function QueuePage() {
             <p className="font-mono-label text-mono-label text-on-surface-variant uppercase mb-2">
               Appointment Date
             </p>
-            <p className="font-h2 text-h2 text-on-surface">{appointment.dateLabel}</p>
+            <p className="font-h2 text-h2 text-on-surface">{queue.dateLabel}</p>
           </div>
           <div className="text-center border-l border-outline-variant/20">
             <p className="font-mono-label text-mono-label text-on-surface-variant uppercase mb-2">
               Scheduled Time
             </p>
-            <p className="font-h2 text-h2 text-on-surface">{appointment.time}</p>
+            <p className="font-h2 text-h2 text-on-surface">{queue.time}</p>
           </div>
         </div>
 

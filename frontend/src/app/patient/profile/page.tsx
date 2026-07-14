@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ProfileHeaderCard from "@/app/patient/profile/_components/ProfileHeaderCard";
+import ProfileHeaderCard from "@/components/profile/ProfileHeaderCard";
 import PersonalInfoCard from "@/app/patient/profile/_components/PersonalInfoCard";
-import SecurityAccountCard from "@/app/patient/profile/_components/SecurityAccountCard";
+import SecurityAccountCard from "@/components/profile/SecurityAccountCard";
 import MedicalInfoCard from "@/app/patient/profile/_components/MedicalInfoCard";
 import EditProfileModal from "@/app/patient/profile/_components/EditProfileModal";
 import { INITIAL_PROFILE, ProfileData } from "@/app/patient/profile/_components/types";
@@ -15,6 +15,7 @@ import { fileToCompressedDataUrl } from "@/lib/image";
 export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData>(INITIAL_PROFILE);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+  const [memberSince, setMemberSince] = useState<string | undefined>(undefined);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -24,6 +25,14 @@ export default function ProfilePage() {
       setProfile(sessionUserToProfile(session.user));
       setAvatarUrl(session.user.avatarUrl);
       setTwoFactorEnabled(Boolean(session.user.twoFactorEnabled));
+      if (session.user.createdAt) {
+        setMemberSince(
+          new Date(session.user.createdAt).toLocaleDateString("en-US", {
+            month: "short",
+            year: "numeric",
+          })
+        );
+      }
     }
   }, []);
 
@@ -44,6 +53,7 @@ export default function ProfilePage() {
       <ProfileHeaderCard
         name={profile.fullName}
         avatarUrl={avatarUrl}
+        memberSince={memberSince}
         onEditClick={() => setModalOpen(true)}
         onAvatarChange={handleAvatarChange}
       />

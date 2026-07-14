@@ -1,16 +1,72 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { getAppointments } from "@/lib/appointments";
+import type { BodyRegion } from "@/components/three/BodyModel3D";
+
+const BodyModel3D = dynamic(() => import("@/components/three/BodyModel3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-full">
+      <span className="material-symbols-outlined text-on-surface-variant/30 text-4xl animate-pulse">
+        person
+      </span>
+    </div>
+  ),
+});
+
+const REGION_LABEL: Record<BodyRegion, string> = {
+  head: "Head & Neurological",
+  torso: "Chest & Core",
+  limbs: "Musculoskeletal",
+};
+
+const REGION_TAG: Record<BodyRegion, string> = {
+  head: "NEUROLOGICAL",
+  torso: "CARDIOVASCULAR",
+  limbs: "MUSCULOSKELETAL",
+};
+
+function inferRegion(specialty: string): BodyRegion | null {
+  const s = specialty.toLowerCase();
+  if (/cardio|pulmo|gastro|nephro|onco|surg|obstet|gynec/.test(s)) return "torso";
+  if (/neuro|psychiat|ophthalm|ent|otolaryng/.test(s)) return "head";
+  if (/ortho/.test(s)) return "limbs";
+  return null;
+}
+
 export default function BodyFocusCard() {
+  const [focusRegion, setFocusRegion] = useState<BodyRegion | null | undefined>(undefined);
+  const [resetCount, setResetCount] = useState(0);
+
+  useEffect(() => {
+    getAppointments().then((appointments) => {
+      const counts: Record<BodyRegion, number> = { head: 0, torso: 0, limbs: 0 };
+      appointments
+        .filter((a) => a.status !== "Cancelled")
+        .forEach((a) => {
+          const region = inferRegion(a.specialty);
+          if (region) counts[region] += 1;
+        });
+
+      const top = (Object.entries(counts) as [BodyRegion, number][]).sort((a, b) => b[1] - a[1])[0];
+      setFocusRegion(top && top[1] > 0 ? top[0] : null);
+    });
+  }, []);
+
   return (
     <div className="bg-white/70 backdrop-blur-xl border border-outline-variant/20 rounded-[2.5rem] p-6 sm:p-10 min-h-[440px] lg:h-[580px] relative shadow-lg">
       <div className="mb-6 sm:mb-8">
         <h3 className="text-[26px] sm:text-[32px] leading-[1.2] tracking-[-0.01em] font-semibold text-on-surface">
           Body Focus
         </h3>
-        <p className="text-on-surface-variant text-base mt-1">AI-mapped wellness localization</p>
+        <p className="text-on-surface-variant text-base mt-1">Based on your visit history — drag to rotate</p>
       </div>
 
-      <div className="relative w-full h-[260px] sm:h-[380px] flex justify-center items-center rounded-[2rem] bg-gradient-to-b from-primary/5 to-transparent overflow-hidden">
+      <div className="relative w-full h-[260px] sm:h-[380px] rounded-[2rem] bg-gradient-to-b from-primary/5 to-transparent overflow-hidden">
         <div
-          className="absolute inset-0 opacity-40"
+          className="absolute inset-0 opacity-40 pointer-events-none"
           style={{
             backgroundImage:
               "linear-gradient(rgba(87,78,177,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(87,78,177,0.08) 1px, transparent 1px)",
@@ -18,15 +74,23 @@ export default function BodyFocusCard() {
           }}
         />
 
-        <svg viewBox="0 0 240 480" className="relative h-full w-auto text-on-surface-variant/20" fill="currentColor">
-          <ellipse cx="120" cy="52" rx="27" ry="31" />
-          <rect x="106" y="80" width="28" height="20" rx="8" />
-          <path d="M63 108c0-13 15-22 57-22s57 9 57 22l6 78c1 11-6 20-17 22l-8 66c-1 11-9 18-19 18h-38c-10 0-18-7-19-18l-8-66c-11-2-18-11-17-22z" />
-          <path d="M60 112c-16 4-27 15-30 42l-8 62c-1 9 4 16 12 17s15-4 16-13l10-58c1-6 4-10 8-13z" />
-          <path d="M180 112c16 4 27 15 30 42l8 62c1 9-4 16-12 17s-15-4-16-13l-10-58c-1-6-4-10-8-13z" />
-          <path d="M100 292h16l-6 128c0 12-4 22-14 22s-15-9-14-21z" />
-          <path d="M140 292h-16l6 128c0 12 4 22 14 22s15-9 14-21z" />
-        </svg>
+        {focusRegion && (
+          <span className="absolute top-4 left-4 z-10 text-[10px] font-bold uppercase tracking-widest bg-primary/10 text-primary px-3 py-1.5 rounded-full">
+            {REGION_TAG[focusRegion]}
+          </span>
+        )}
+
+        {focusRegion !== undefined && (
+          <BodyModel3D key={resetCount} focusRegion={focusRegion} />
+        )}
+
+        <button
+          onClick={() => setResetCount((c) => c + 1)}
+          title="Reset view"
+          className="absolute bottom-4 right-4 z-10 w-9 h-9 rounded-full bg-white/80 border border-outline-variant/30 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-white transition-colors shadow-sm"
+        >
+          <span className="material-symbols-outlined text-[18px]">center_focus_weak</span>
+        </button>
       </div>
 
       <div className="mt-6 text-center">
@@ -34,7 +98,11 @@ export default function BodyFocusCard() {
           Primary Focus
         </p>
         <p className="text-sm text-on-surface-variant">
-          We&apos;ll highlight a focus area here once we have enough health data.
+          {focusRegion === undefined
+            ? " "
+            : focusRegion
+              ? REGION_LABEL[focusRegion]
+              : "We'll highlight a focus area here once you've had a visit."}
         </p>
       </div>
     </div>

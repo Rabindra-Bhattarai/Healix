@@ -10,11 +10,15 @@
   },
   "dependencies": {
     "@react-oauth/google": "^0.13.5",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@types/three": "^0.185.1",
     "leaflet": "^1.9.4",
     "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-leaflet": "^5.0.0"
+    "react-leaflet": "^5.0.0",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@tailwindcss/container-queries": "^0.1.1",

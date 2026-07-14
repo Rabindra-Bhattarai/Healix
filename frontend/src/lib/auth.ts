@@ -14,6 +14,7 @@ export interface SessionUser {
   dob?: string;
   gender?: string;
   twoFactorEnabled?: boolean;
+  createdAt?: string;
 }
 
 export interface Session {

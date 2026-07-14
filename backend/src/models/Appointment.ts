@@ -14,6 +14,7 @@ export interface AppointmentDocument extends Document {
   status: AppointmentStatus;
   reason?: string;
   queueToken: string;
+  reminderSent: boolean;
   createdAt: Date;
 }
 
@@ -30,6 +31,7 @@ const appointmentSchema = new Schema<AppointmentDocument>(
     status: { type: String, enum: ["Confirmed", "Cancelled", "Completed"], default: "Confirmed" },
     reason: { type: String },
     queueToken: { type: String, required: true },
+    reminderSent: { type: Boolean, default: false },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );

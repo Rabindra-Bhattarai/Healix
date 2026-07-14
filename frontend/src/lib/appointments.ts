@@ -4,8 +4,10 @@ export type AppointmentStatus = "Confirmed" | "Cancelled" | "Completed";
 
 export interface BookedAppointment {
   id: string;
+  doctorId: string;
   doctorName: string;
   specialty: string;
+  date: string;
   dateLabel: string;
   time: string;
   status: AppointmentStatus;
@@ -24,6 +26,7 @@ interface AppointmentRecord {
   doctor: string;
   doctorName: string;
   specialty: string;
+  date: string;
   dateLabel: string;
   time: string;
   status: AppointmentStatus;
@@ -34,8 +37,10 @@ interface AppointmentRecord {
 function toBooked(record: AppointmentRecord): BookedAppointment {
   return {
     id: record._id,
+    doctorId: record.doctor,
     doctorName: record.doctorName,
     specialty: record.specialty,
+    date: record.date,
     dateLabel: record.dateLabel,
     time: record.time,
     status: record.status,
@@ -78,6 +83,49 @@ export async function rescheduleAppointment(
 export async function getActiveQueueAppointment(): Promise<BookedAppointment | undefined> {
   const appointments = await getAppointments();
   return appointments.find((a) => a.status === "Confirmed");
+}
+
+export interface AdminAppointment extends BookedAppointment {
+  patientName: string;
+  patientEmail: string;
+  patientPhone?: string;
+}
+
+interface AdminAppointmentRecord extends AppointmentRecord {
+  patient: { _id: string; name: string; email: string; phone?: string };
+}
+
+export async function getAllAppointmentsAdmin(filters?: {
+  dateLabel?: string;
+  status?: AppointmentStatus;
+}): Promise<AdminAppointment[]> {
+  const params = new URLSearchParams();
+  if (filters?.dateLabel) params.set("dateLabel", filters.dateLabel);
+  if (filters?.status) params.set("status", filters.status);
+  const query = params.toString();
+
+  const { appointments } = await api.get<{ appointments: AdminAppointmentRecord[] }>(
+    `/appointments${query ? `?${query}` : ""}`
+  );
+  return appointments.map((record) => ({
+    ...toBooked(record),
+    patientName: record.patient.name,
+    patientEmail: record.patient.email,
+    patientPhone: record.patient.phone,
+  }));
+}
+
+export interface QueueStatus {
+  queueToken: string;
+  dateLabel: string;
+  time: string;
+  doctorName: string;
+  peopleAhead: number;
+}
+
+export async function getQueueStatus(): Promise<QueueStatus | null> {
+  const { queue } = await api.get<{ queue: QueueStatus | null }>("/appointments/queue-status");
+  return queue;
 }
 
 export async function getMessageableDoctors(): Promise<MessageableDoctor[]> {

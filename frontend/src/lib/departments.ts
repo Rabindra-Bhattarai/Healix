@@ -13,8 +13,12 @@ export interface Department {
   meta: string;
 }
 
-export async function getDepartments(): Promise<Department[]> {
-  const { departments } = await api.get<{ departments: Department[] }>("/departments");
+export interface DepartmentRecord extends Department {
+  _id: string;
+}
+
+export async function getDepartments(): Promise<DepartmentRecord[]> {
+  const { departments } = await api.get<{ departments: DepartmentRecord[] }>("/departments");
   return departments;
 }
 
@@ -22,4 +26,26 @@ export async function getDepartment(slug: string | null): Promise<Department | u
   if (!slug) return undefined;
   const departments = await getDepartments();
   return departments.find((d) => d.slug === slug);
+}
+
+export type CreateDepartmentInput = Department;
+
+export async function createDepartment(input: CreateDepartmentInput): Promise<DepartmentRecord> {
+  const { department } = await api.post<{ department: DepartmentRecord }>("/departments", input);
+  return department;
+}
+
+export async function updateDepartment(
+  id: string,
+  patch: Partial<CreateDepartmentInput>
+): Promise<DepartmentRecord> {
+  const { department } = await api.put<{ department: DepartmentRecord }>(
+    `/departments/${id}`,
+    patch
+  );
+  return department;
+}
+
+export async function deleteDepartment(id: string): Promise<void> {
+  await api.delete(`/departments/${id}`);
 }

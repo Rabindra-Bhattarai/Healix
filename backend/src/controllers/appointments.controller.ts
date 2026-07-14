@@ -3,6 +3,7 @@ import Appointment from "../models/Appointment";
 import Doctor from "../models/Doctor";
 import Counter from "../models/Counter";
 import { asyncHandler } from "../utils/asyncHandler";
+import { notify } from "../utils/notify";
 
 // Atomically increments a per-day counter (keyed by dateLabel) so tokens start
 // at 1, are never duplicated even under concurrent bookings, and never get
@@ -42,6 +43,15 @@ export const createAppointment = asyncHandler(async (req: Request, res: Response
     queueToken,
   });
 
+  await notify({
+    user: appointment.patient,
+    type: "appointment_booked",
+    icon: "event_available",
+    tone: "primary",
+    text: `Appointment confirmed with ${doctor.name} on ${dateLabel} at ${time}.`,
+    link: "/patient/appointments",
+  });
+
   res.status(201).json({ appointment });
 });
 
@@ -79,6 +89,16 @@ export const cancelAppointment = asyncHandler(async (req: Request, res: Response
 
   appointment.status = "Cancelled";
   await appointment.save();
+
+  await notify({
+    user: appointment.patient,
+    type: "appointment_cancelled",
+    icon: "event_busy",
+    tone: "error",
+    text: `Your appointment with ${appointment.doctorName} on ${appointment.dateLabel} has been cancelled.`,
+    link: "/patient/appointments",
+  });
+
   res.json({ appointment });
 });
 
@@ -105,7 +125,17 @@ export const rescheduleAppointment = asyncHandler(async (req: Request, res: Resp
   appointment.date = date;
   appointment.dateLabel = dateLabel;
   appointment.time = time;
+  appointment.reminderSent = false;
   await appointment.save();
+
+  await notify({
+    user: appointment.patient,
+    type: "appointment_rescheduled",
+    icon: "event_repeat",
+    tone: "secondary",
+    text: `Your appointment with ${appointment.doctorName} has been rescheduled to ${dateLabel} at ${time}.`,
+    link: "/patient/appointments",
+  });
 
   res.json({ appointment });
 });
@@ -126,5 +156,55 @@ export const updateAppointmentStatus = asyncHandler(async (req: Request, res: Re
 
   appointment.status = status;
   await appointment.save();
+
+  if (status === "Completed") {
+    await notify({
+      user: appointment.patient,
+      type: "appointment_completed",
+      icon: "task_alt",
+      tone: "secondary",
+      text: `Your appointment with ${appointment.doctorName} is complete.`,
+      link: "/patient/appointments",
+    });
+  } else if (status === "Cancelled") {
+    await notify({
+      user: appointment.patient,
+      type: "appointment_cancelled",
+      icon: "event_busy",
+      tone: "error",
+      text: `Your appointment with ${appointment.doctorName} on ${appointment.dateLabel} has been cancelled.`,
+      link: "/patient/appointments",
+    });
+  }
+
+  await appointment.populate("patient", "name email phone");
   res.json({ appointment });
+});
+
+export const getQueueStatus = asyncHandler(async (req: Request, res: Response) => {
+  // Queue tokens are a single sequence per day across the whole hospital (see
+  // nextQueueToken above), so "people ahead" is every other still-waiting
+  // appointment that day with a lower token - not scoped to one doctor.
+  const appointment = await Appointment.findOne({
+    patient: req.user!.id,
+    status: "Confirmed",
+  }).sort({ date: 1 });
+
+  if (!appointment) return res.json({ queue: null });
+
+  const peopleAhead = await Appointment.countDocuments({
+    dateLabel: appointment.dateLabel,
+    status: "Confirmed",
+    queueToken: { $lt: appointment.queueToken },
+  });
+
+  res.json({
+    queue: {
+      queueToken: appointment.queueToken,
+      dateLabel: appointment.dateLabel,
+      time: appointment.time,
+      doctorName: appointment.doctorName,
+      peopleAhead,
+    },
+  });
 });

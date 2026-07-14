@@ -5,11 +5,13 @@ import { useRef, useState } from "react";
 export default function ProfileHeaderCard({
   name,
   avatarUrl,
+  memberSince,
   onEditClick,
   onAvatarChange,
 }: {
   name: string;
   avatarUrl?: string;
+  memberSince?: string;
   onEditClick: () => void;
   onAvatarChange: (file: File) => Promise<void>;
 }) {
@@ -74,10 +76,6 @@ export default function ProfileHeaderCard({
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
           <div>
             <h2 className="font-h1 text-h1 text-on-surface">{name}</h2>
-            <p className="font-body-md text-body-md text-on-surface-variant flex items-center justify-center md:justify-start mt-1">
-              <span className="material-symbols-outlined text-[16px] mr-1">location_on</span>
-              San Francisco, CA &bull; Patient ID: #HX-98210
-            </p>
           </div>
           <div className="flex justify-center md:justify-end">
             <button
@@ -93,7 +91,7 @@ export default function ProfileHeaderCard({
             <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">
               Member Since
             </span>
-            <span className="font-h3 text-h3 text-on-surface mt-1">Oct 2023</span>
+            <span className="font-h3 text-h3 text-on-surface mt-1">{memberSince ?? "—"}</span>
           </div>
         </div>
       </div>

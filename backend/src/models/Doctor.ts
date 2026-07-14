@@ -12,6 +12,7 @@ export interface DoctorDocument extends Document {
   location: string;
   description: string;
   tags: string[];
+  isBlocked: boolean;
 }
 
 const doctorSchema = new Schema<DoctorDocument>({
@@ -26,6 +27,7 @@ const doctorSchema = new Schema<DoctorDocument>({
   location: { type: String, default: "Tribhuvan University Teaching Hospital" },
   description: { type: String, default: "" },
   tags: { type: [String], default: [] },
+  isBlocked: { type: Boolean, default: false },
 });
 
 export default model<DoctorDocument>("Doctor", doctorSchema);

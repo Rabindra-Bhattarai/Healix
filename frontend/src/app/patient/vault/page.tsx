@@ -32,19 +32,9 @@ export default function VaultPage() {
                 Medical Vault
               </h2>
               <p className="text-base text-[#6B7280] max-w-2xl leading-relaxed">
-                Access your secure clinical repository. Manage all patient documentation, lab
-                results, and imaging scans with end-to-end encryption.
+                Access your secure clinical repository. Lab results and reports your doctors add
+                after a visit appear here automatically, end-to-end encrypted.
               </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <button className="flex items-center gap-2 px-6 py-2.5 bg-white border border-[#E5E7EB]/50 rounded-xl text-sm font-semibold text-[#6B7280] hover:bg-gray-50 transition-all shadow-sm">
-                <span className="material-symbols-outlined text-[18px]">filter_list</span>
-                Filter
-              </button>
-              <button className="flex items-center gap-2 px-6 py-2.5 bg-[#7F77DD] text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg shadow-[#7F77DD]/25 transition-all">
-                <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                Upload Report
-              </button>
             </div>
           </section>
 

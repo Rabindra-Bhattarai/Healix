@@ -53,6 +53,126 @@ const DEPARTMENTS = [
     availability: "closed",
     meta: "Opens at 8:00 AM",
   },
+  {
+    slug: "emergency-medicine",
+    name: "Emergency Medicine",
+    icon: "emergency",
+    tone: "error",
+    description:
+      "Round-the-clock trauma and urgent care for acute illness and injury, staffed for rapid triage and stabilization.",
+    availability: "open",
+    meta: "Estimated wait: 10 mins",
+  },
+  {
+    slug: "orthopedics",
+    name: "Orthopedics",
+    icon: "orthopedics",
+    tone: "tertiary",
+    description:
+      "Diagnosis and treatment of bone, joint, and muscle conditions, from sports injuries to joint replacement.",
+    availability: "open",
+    meta: "Estimated wait: 25 mins",
+  },
+  {
+    slug: "general-surgery",
+    name: "General Surgery",
+    icon: "medical_services",
+    tone: "primary",
+    description:
+      "Surgical evaluation and procedures spanning abdominal, soft-tissue, and minimally invasive operations.",
+    availability: "busy",
+    meta: "Estimated wait: 40 mins",
+  },
+  {
+    slug: "obstetrics-gynecology",
+    name: "Obstetrics & Gynecology",
+    icon: "pregnant_woman",
+    tone: "secondary",
+    description:
+      "Comprehensive women's health care covering prenatal visits, delivery, and gynecological wellness.",
+    availability: "open",
+    meta: "Estimated wait: 20 mins",
+  },
+  {
+    slug: "ophthalmology",
+    name: "Ophthalmology",
+    icon: "visibility",
+    tone: "tertiary",
+    description:
+      "Complete eye care including vision testing, treatment of eye disease, and surgical procedures.",
+    availability: "open",
+    meta: "Estimated wait: 15 mins",
+  },
+  {
+    slug: "ent",
+    name: "ENT (Otolaryngology)",
+    icon: "hearing",
+    tone: "primary",
+    description:
+      "Specialized care for ear, nose, and throat conditions, including hearing and sinus disorders.",
+    availability: "open",
+    meta: "Estimated wait: 20 mins",
+  },
+  {
+    slug: "psychiatry",
+    name: "Psychiatry",
+    icon: "psychiatry",
+    tone: "secondary",
+    description:
+      "Confidential mental health evaluation, therapy, and medication management for patients of all ages.",
+    availability: "open",
+    meta: "Estimated wait: 30 mins",
+  },
+  {
+    slug: "oncology",
+    name: "Oncology",
+    icon: "oncology",
+    tone: "error",
+    description:
+      "Cancer screening, diagnosis, and treatment planning delivered by a multidisciplinary care team.",
+    availability: "open",
+    meta: "Estimated wait: 25 mins",
+  },
+  {
+    slug: "gastroenterology",
+    name: "Gastroenterology",
+    icon: "gastroenterology",
+    tone: "primary",
+    description:
+      "Digestive system care including endoscopy and treatment of stomach, liver, and intestinal conditions.",
+    availability: "busy",
+    meta: "Estimated wait: 35 mins",
+  },
+  {
+    slug: "pulmonology",
+    name: "Pulmonology",
+    icon: "pulmonology",
+    tone: "secondary",
+    description:
+      "Diagnosis and management of respiratory conditions affecting the lungs and airways.",
+    availability: "open",
+    meta: "Estimated wait: 20 mins",
+  },
+  {
+    slug: "nephrology",
+    name: "Nephrology",
+    icon: "nephrology",
+    tone: "tertiary",
+    description:
+      "Kidney health care including chronic kidney disease management and dialysis coordination.",
+    availability: "open",
+    meta: "Estimated wait: 20 mins",
+  },
+  {
+    slug: "radiology",
+    name: "Radiology",
+    icon: "radiology",
+    tone: "error",
+    description:
+      "Diagnostic imaging services including X-ray, ultrasound, CT, and MRI for accurate clinical insight.",
+    availability: "open",
+    meta: "Estimated wait: 15 mins",
+  },
 ] as const;
 
 const DOCTORS_BY_DEPARTMENT: Record<string, Array<{
