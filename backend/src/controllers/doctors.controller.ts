@@ -29,6 +29,11 @@ export const listDoctors = asyncHandler(async (req: Request, res: Response) => {
     if (!department) return res.json({ doctors: [] });
     filter.department = department._id;
   }
+  // Patients/doctors never see blocked doctors in listings (e.g. booking flow);
+  // admin manages them directly from Doctors Management, so sees everything.
+  if (req.user!.role !== "admin") {
+    filter.isBlocked = { $ne: true };
+  }
 
   const doctors = await Doctor.find(filter)
     .populate("department", "name slug")
