@@ -10,6 +10,8 @@ import appointmentsRoutes from "./routes/appointments.routes";
 import vaultRoutes from "./routes/vault.routes";
 import conversationsRoutes from "./routes/conversations.routes";
 import triageRoutes from "./routes/triage.routes";
+import notificationsRoutes from "./routes/notifications.routes";
+import { startAppointmentReminderJob } from "./jobs/appointmentReminders";
 
 const app = express();
 
@@ -27,6 +29,7 @@ app.use("/api/appointments", appointmentsRoutes);
 app.use("/api/vault", vaultRoutes);
 app.use("/api/conversations", conversationsRoutes);
 app.use("/api/triage", triageRoutes);
+app.use("/api/notifications", notificationsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: `No route for ${req.method} ${req.path}` });
@@ -43,6 +46,7 @@ const PORT = process.env.PORT ?? 5000;
 connectDB()
   .then(() => {
     app.listen(PORT, () => console.log(`Healix API listening on port ${PORT}`));
+    startAppointmentReminderJob();
   })
   .catch((err) => {
     console.error("Failed to connect to MongoDB", err);
