@@ -54,3 +54,16 @@ export async function getVaultReport(id: string): Promise<VaultReportRecord> {
   const { report } = await api.get<{ report: RawVaultReport }>(`/vault/${id}`);
   return toRecord(report);
 }
+
+export interface CreateVaultReportInput {
+  patientId: string;
+  title: string;
+  category: string;
+  status: "Ready" | "Pending";
+  results?: LabResultRow[];
+}
+
+export async function createVaultReport(input: CreateVaultReportInput): Promise<VaultReportRecord> {
+  const { report } = await api.post<{ report: RawVaultReport }>("/vault", input);
+  return toRecord(report);
+}

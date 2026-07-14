@@ -4,6 +4,7 @@ import Message from "../models/Message";
 import Doctor from "../models/Doctor";
 import Appointment from "../models/Appointment";
 import { asyncHandler } from "../utils/asyncHandler";
+import { notify } from "../utils/notify";
 
 async function assertParticipant(conversationId: string, userId: string, role: string) {
   const conversation = await Conversation.findById(conversationId);
@@ -81,6 +82,29 @@ export const sendMessage = asyncHandler(async (req: Request, res: Response) => {
 
   conversation.lastMessageAt = new Date();
   await conversation.save();
+
+  const doctor = await Doctor.findById(conversation.doctor);
+  if (req.user!.role === "patient") {
+    if (doctor?.user) {
+      await notify({
+        user: doctor.user,
+        type: "message",
+        icon: "chat",
+        tone: "tertiary",
+        text: "New message from a patient.",
+        link: "/doctor/messages",
+      });
+    }
+  } else {
+    await notify({
+      user: conversation.patient,
+      type: "message",
+      icon: "chat",
+      tone: "tertiary",
+      text: `New message from ${doctor?.name ?? "your doctor"}.`,
+      link: "/patient/messages",
+    });
+  }
 
   res.status(201).json({ message });
 });

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import ChangePasswordModal from "@/app/patient/profile/_components/ChangePasswordModal";
-import TwoFactorModal from "@/app/patient/profile/_components/TwoFactorModal";
+import ChangePasswordModal from "@/components/profile/ChangePasswordModal";
+import TwoFactorModal from "@/components/profile/TwoFactorModal";
 
 export default function SecurityAccountCard({
   twoFactorEnabled,

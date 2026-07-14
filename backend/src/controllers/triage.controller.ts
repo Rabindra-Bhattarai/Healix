@@ -67,7 +67,31 @@ Rules:
   const latest = typedMessages[typedMessages.length - 1];
 
   const chat = model.startChat({ history });
-  const result = await chat.sendMessage(latest.text);
+
+  let result;
+  try {
+    result = await chat.sendMessage(latest.text);
+  } catch (err) {
+    const isTransient = err instanceof Error && /503|overloaded|high demand/i.test(err.message);
+    if (isTransient) {
+      // Gemini free-tier models occasionally return 503 under load; one quick retry usually clears it.
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      try {
+        result = await chat.sendMessage(latest.text);
+      } catch (retryErr) {
+        console.error("[triage] Gemini request failed after retry", retryErr);
+        return res.status(503).json({
+          message: "Our AI assistant is temporarily busy. Please try again in a moment.",
+        });
+      }
+    } else {
+      console.error("[triage] Gemini request failed", err);
+      return res.status(503).json({
+        message: "Our AI assistant is temporarily unavailable. Please try again in a moment.",
+      });
+    }
+  }
+
   const parsed = JSON.parse(result.response.text()) as {
     reply: string;
     recommendedDepartmentSlug?: string | null;

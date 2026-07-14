@@ -12,6 +12,16 @@ export async function uploadAvatar(dataUrl: string): Promise<SessionUser> {
   return user;
 }
 
+export async function updateBasicProfile(patch: {
+  name?: string;
+  email?: string;
+  phone?: string;
+}): Promise<SessionUser> {
+  const { user } = await api.patch<{ user: SessionUser }>("/auth/me", patch);
+  updateSessionUser(user);
+  return user;
+}
+
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
   await api.post("/auth/change-password", { currentPassword, newPassword });
 }

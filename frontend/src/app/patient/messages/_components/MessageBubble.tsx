@@ -1,13 +1,19 @@
 import { ChatMessage } from "@/lib/conversations";
 
-export default function MessageBubble({ message }: { message: ChatMessage }) {
-  const isPatient = message.sender === "patient";
+export default function MessageBubble({
+  message,
+  viewerRole = "patient",
+}: {
+  message: ChatMessage;
+  viewerRole?: "patient" | "doctor";
+}) {
+  const isMine = message.sender === viewerRole;
 
   return (
-    <div className={`flex flex-col gap-1 max-w-md ${isPatient ? "self-end items-end" : "self-start items-start"}`}>
+    <div className={`flex flex-col gap-1 max-w-md ${isMine ? "self-end items-end" : "self-start items-start"}`}>
       <div
         className={`px-5 py-3 rounded-2xl ${
-          isPatient
+          isMine
             ? "bg-primary text-on-primary rounded-tr-sm"
             : "bg-surface-container-low text-on-surface rounded-tl-sm"
         }`}

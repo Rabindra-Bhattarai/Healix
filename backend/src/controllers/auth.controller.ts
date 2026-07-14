@@ -26,6 +26,7 @@ function toPublicUser(user: InstanceType<typeof User>) {
     dob: user.dob,
     gender: user.gender,
     twoFactorEnabled: user.twoFactorEnabled,
+    createdAt: user.createdAt,
   };
 }
 

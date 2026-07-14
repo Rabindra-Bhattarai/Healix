@@ -12,6 +12,16 @@ function slugify(name: string) {
     .replace(/(^-|-$)/g, "");
 }
 
+async function withUserContact<T extends { user: unknown }>(doctors: T[]) {
+  const userIds = doctors.map((d) => d.user);
+  const users = await User.find({ _id: { $in: userIds } }, "email phone");
+  const userMap = new Map(users.map((u) => [u._id.toString(), u]));
+  return doctors.map((d) => {
+    const user = userMap.get(String(d.user));
+    return { ...d, email: user?.email, phone: user?.phone };
+  });
+}
+
 export const listDoctors = asyncHandler(async (req: Request, res: Response) => {
   const filter: Record<string, unknown> = {};
   if (req.query.department) {
@@ -20,14 +30,18 @@ export const listDoctors = asyncHandler(async (req: Request, res: Response) => {
     filter.department = department._id;
   }
 
-  const doctors = await Doctor.find(filter).sort({ rating: -1 });
-  res.json({ doctors });
+  const doctors = await Doctor.find(filter)
+    .populate("department", "name slug")
+    .sort({ rating: -1 })
+    .lean();
+  res.json({ doctors: await withUserContact(doctors) });
 });
 
 export const getDoctor = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await Doctor.findById(req.params.id);
+  const doctor = await Doctor.findById(req.params.id).populate("department", "name slug").lean();
   if (!doctor) return res.status(404).json({ message: "Doctor not found" });
-  res.json({ doctor });
+  const [enriched] = await withUserContact([doctor]);
+  res.json({ doctor: enriched });
 });
 
 export const createDoctor = asyncHandler(async (req: Request, res: Response) => {
@@ -70,14 +84,44 @@ export const createDoctor = asyncHandler(async (req: Request, res: Response) => 
     description,
     tags,
   });
+  await doctor.populate("department", "name slug");
 
-  res.status(201).json({ doctor });
+  res.status(201).json({ doctor: { ...doctor.toObject(), email: user.email, phone: user.phone } });
 });
 
 export const updateDoctor = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await Doctor.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  const doctor = await Doctor.findById(req.params.id);
   if (!doctor) return res.status(404).json({ message: "Doctor not found" });
-  res.json({ doctor });
+
+  const { phone, email, password, departmentSlug, ...doctorFields } = req.body ?? {};
+
+  if (departmentSlug) {
+    const department = await Department.findOne({ slug: departmentSlug });
+    if (!department) return res.status(400).json({ message: "Unknown departmentSlug" });
+    doctorFields.department = department._id;
+  }
+
+  Object.assign(doctor, doctorFields);
+  await doctor.save();
+
+  // email/phone/password live on the linked User account, not the Doctor document.
+  const userUpdates: Record<string, unknown> = {};
+  if (phone !== undefined) userUpdates.phone = phone;
+  if (email !== undefined) {
+    const existing = await User.findOne({ email: email.toLowerCase(), _id: { $ne: doctor.user } });
+    if (existing) return res.status(409).json({ message: "An account with this email already exists" });
+    userUpdates.email = email;
+  }
+  if (password) {
+    userUpdates.passwordHash = await bcrypt.hash(password, 10);
+  }
+  if (Object.keys(userUpdates).length > 0) {
+    await User.findByIdAndUpdate(doctor.user, userUpdates);
+  }
+
+  await doctor.populate("department", "name slug");
+  const user = await User.findById(doctor.user, "email phone");
+  res.json({ doctor: { ...doctor.toObject(), email: user?.email, phone: user?.phone } });
 });
 
 export const deleteDoctor = asyncHandler(async (req: Request, res: Response) => {
@@ -85,4 +129,26 @@ export const deleteDoctor = asyncHandler(async (req: Request, res: Response) => 
   if (!doctor) return res.status(404).json({ message: "Doctor not found" });
   await User.findByIdAndDelete(doctor.user);
   res.status(204).end();
+});
+
+const DOCTOR_SELF_UPDATABLE_FIELDS = [
+  "specialty",
+  "description",
+  "tags",
+  "experienceYears",
+  "location",
+] as const;
+
+export const updateMyDoctorProfile = asyncHandler(async (req: Request, res: Response) => {
+  const doctor = await Doctor.findOne({ user: req.user!.id });
+  if (!doctor) return res.status(404).json({ message: "Doctor profile not found" });
+
+  for (const field of DOCTOR_SELF_UPDATABLE_FIELDS) {
+    if (req.body?.[field] !== undefined) {
+      (doctor as unknown as Record<string, unknown>)[field] = req.body[field];
+    }
+  }
+
+  await doctor.save();
+  res.json({ doctor });
 });

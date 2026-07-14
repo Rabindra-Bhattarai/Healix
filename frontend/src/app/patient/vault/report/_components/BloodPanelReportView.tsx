@@ -8,6 +8,7 @@ import PatientTopNav from "@/layouts/PatientTopNav";
 import LabResultsTable, { LabRow } from "@/app/patient/vault/report/_components/LabResultsTable";
 import QrCodeModal from "@/app/patient/vault/report/_components/QrCodeModal";
 import { VaultReportRecord, getVaultReport } from "@/lib/vault";
+import { getVaultCategoryFields } from "@/lib/vaultCategories";
 
 export default function BloodPanelReportView() {
   const searchParams = useSearchParams();
@@ -36,6 +37,7 @@ export default function BloodPanelReportView() {
   }
 
   const rows: LabRow[] = report.results;
+  const fields = getVaultCategoryFields(report.category);
 
   return (
     <div className="bg-background text-on-surface min-h-screen">
@@ -49,7 +51,7 @@ export default function BloodPanelReportView() {
               Vault
             </Link>
             <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-            <span className="hover:text-primary">Laboratory Results</span>
+            <span className="hover:text-primary">{report.category}</span>
             <span className="material-symbols-outlined text-[14px]">chevron_right</span>
             <span className="text-on-surface font-semibold">{report.title}</span>
           </nav>
@@ -96,7 +98,13 @@ export default function BloodPanelReportView() {
           </section>
 
           <div className="space-y-stack_gap_lg">
-            <LabResultsTable title="Lab Results" subtitle={report.category} rows={rows} />
+            <LabResultsTable
+              title={`${fields.rowLabel} Details`}
+              subtitle={report.category}
+              rows={rows}
+              columns={fields.columns}
+              showFlag={fields.showFlag}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-stack_gap_lg">
               <div className="md:col-span-2 bg-white p-6 rounded-xl border border-outline-variant">
@@ -126,14 +134,16 @@ export default function BloodPanelReportView() {
                   Quick Insights
                 </h4>
                 <div className="space-y-4">
-                  {rows.map((row) => (
+                  {rows.map((row) => {
+                    const isNormal = !fields.showFlag || row.flag === "NORMAL" || row.flag === "OPTIMAL";
+                    return (
                     <div key={row.testName} className="flex items-start gap-3">
                       <span
                         className={`material-symbols-outlined mt-0.5 ${
-                          row.flag === "NORMAL" || row.flag === "OPTIMAL" ? "text-secondary" : "text-tertiary"
+                          isNormal ? "text-secondary" : "text-tertiary"
                         }`}
                       >
-                        {row.flag === "NORMAL" || row.flag === "OPTIMAL" ? "check_circle" : "info"}
+                        {isNormal ? "check_circle" : "info"}
                       </span>
                       <div>
                         <p className="font-label-sm text-label-sm font-bold text-on-surface">
@@ -144,7 +154,8 @@ export default function BloodPanelReportView() {
                         </p>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <Link
                   href="/patient/book"

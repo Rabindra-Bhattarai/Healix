@@ -6,6 +6,7 @@ import Link from "next/link";
 import NotificationsPopover from "@/layouts/_components/NotificationsPopover";
 import { useMobileNav } from "@/layouts/_components/MobileNavContext";
 import { getSession } from "@/lib/auth";
+import { getUnreadCount } from "@/lib/notifications";
 
 const TITLES: Record<string, string> = {
   "/patient": "Dashboard",
@@ -25,13 +26,30 @@ export default function PatientTopNav() {
   const router = useRouter();
   const [notifOpen, setNotifOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { setOpen: setMobileNavOpen } = useMobileNav();
 
   // Re-read on every route change so a photo uploaded on /patient/profile
   // shows up here as soon as the user navigates elsewhere.
   useEffect(() => {
     setAvatarUrl(getSession()?.user.avatarUrl);
+    getUnreadCount()
+      .then(setUnreadCount)
+      .catch(() => {});
   }, [pathname]);
+
+  function handleCloseNotif() {
+    setNotifOpen(false);
+    getUnreadCount()
+      .then(setUnreadCount)
+      .catch(() => {});
+  }
+
+  const notificationBadge = unreadCount > 0 && (
+    <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-error text-white text-[10px] leading-4 text-center font-semibold">
+      {unreadCount > 9 ? "9+" : unreadCount}
+    </span>
+  );
 
   const avatarContent = avatarUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
@@ -76,9 +94,10 @@ export default function PatientTopNav() {
         <div className="flex items-center gap-3 md:gap-4 shrink-0">
           <button
             onClick={() => setNotifOpen((v) => !v)}
-            className="text-on-surface-variant hover:text-primary transition-colors"
+            className="relative text-on-surface-variant hover:text-primary transition-colors"
           >
             <span className="material-symbols-outlined">notifications</span>
+            {notificationBadge}
           </button>
           <button className="text-on-surface-variant hover:text-primary transition-colors hidden sm:inline-flex">
             <span className="material-symbols-outlined">settings</span>
@@ -102,9 +121,10 @@ export default function PatientTopNav() {
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
           <button
             onClick={() => setNotifOpen((v) => !v)}
-            className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors"
+            className="relative text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors"
           >
             <span className="material-symbols-outlined">notifications</span>
+            {notificationBadge}
           </button>
           <button className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors hidden sm:inline-flex">
             <span className="material-symbols-outlined">help</span>
@@ -131,9 +151,10 @@ export default function PatientTopNav() {
           <button
             onClick={() => setNotifOpen((v) => !v)}
             aria-label="Notifications"
-            className="text-on-surface-variant hover:text-primary"
+            className="relative text-on-surface-variant hover:text-primary"
           >
             <span className="material-symbols-outlined text-[20px]">notifications</span>
+            {notificationBadge}
           </button>
           <Link
             href="/patient/profile"
@@ -150,7 +171,9 @@ export default function PatientTopNav() {
   return (
     <>
       {header}
-      {notifOpen && <NotificationsPopover onClose={() => setNotifOpen(false)} />}
+      {notifOpen && (
+        <NotificationsPopover onClose={handleCloseNotif} seeAllHref="/patient/notifications" />
+      )}
     </>
   );
 }
