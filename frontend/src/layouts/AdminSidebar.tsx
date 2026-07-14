@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/admin/doctors", label: "Doctors", icon: "stethoscope" },
   { href: "/admin/departments", label: "Departments", icon: "domain" },
   { href: "/admin/appointments", label: "Appointments", icon: "event_note" },
+  { href: "/admin/reports", label: "Reports", icon: "flag" },
   { href: "/admin/profile", label: "Profile", icon: "account_circle" },
 ];
 
