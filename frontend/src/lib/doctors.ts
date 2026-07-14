@@ -18,6 +18,7 @@ export interface DoctorRecord extends Doctor {
   department?: { _id: string; name: string; slug: string };
   email?: string;
   phone?: string;
+  isBlocked?: boolean;
 }
 
 export async function getDoctorsByDepartment(departmentSlug: string): Promise<Doctor[]> {
@@ -72,4 +73,9 @@ export async function updateDoctorRecord(
 
 export async function deleteDoctorRecord(id: string): Promise<void> {
   await api.delete(`/doctors/${id}`);
+}
+
+export async function setDoctorBlocked(id: string, isBlocked: boolean): Promise<DoctorRecord> {
+  const { doctor } = await api.put<{ doctor: DoctorRecord }>(`/doctors/${id}`, { isBlocked });
+  return doctor;
 }
