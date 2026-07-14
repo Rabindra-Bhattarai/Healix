@@ -10,6 +10,7 @@ import {
 } from "@/lib/appointments";
 import AppointmentDetailsModal from "@/app/patient/appointments/_components/AppointmentDetailsModal";
 import RescheduleModal from "@/app/patient/appointments/_components/RescheduleModal";
+import ReportDoctorModal from "@/app/patient/appointments/_components/ReportDoctorModal";
 
 const STATUS_CLASSES: Record<AppointmentStatus, string> = {
   Confirmed: "bg-secondary/10 text-secondary border-secondary/20",
@@ -27,6 +28,7 @@ export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<BookedAppointment[]>([]);
   const [viewing, setViewing] = useState<BookedAppointment | null>(null);
   const [rescheduling, setRescheduling] = useState<BookedAppointment | null>(null);
+  const [reporting, setReporting] = useState<BookedAppointment | null>(null);
 
   useEffect(() => {
     getAppointments().then(setAppointments);
@@ -174,6 +176,13 @@ export default function AppointmentsPage() {
                   >
                     <span className="material-symbols-outlined">delete</span>
                   </button>
+                  <button
+                    title="Report Doctor"
+                    onClick={() => setReporting(appt)}
+                    className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/5 rounded-lg transition-colors"
+                  >
+                    <span className="material-symbols-outlined">flag</span>
+                  </button>
                 </div>
               </div>
             ))}
@@ -189,6 +198,13 @@ export default function AppointmentsPage() {
           appointment={rescheduling}
           onClose={() => setRescheduling(null)}
           onRescheduled={refreshAppointments}
+        />
+      )}
+      {reporting && (
+        <ReportDoctorModal
+          doctorId={reporting.doctorId}
+          doctorName={reporting.doctorName}
+          onClose={() => setReporting(null)}
         />
       )}
     </div>
