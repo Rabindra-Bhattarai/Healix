@@ -4,6 +4,7 @@ export type AppointmentStatus = "Confirmed" | "Cancelled" | "Completed";
 
 export interface BookedAppointment {
   id: string;
+  doctorId: string;
   doctorName: string;
   specialty: string;
   date: string;
@@ -36,6 +37,7 @@ interface AppointmentRecord {
 function toBooked(record: AppointmentRecord): BookedAppointment {
   return {
     id: record._id,
+    doctorId: record.doctor,
     doctorName: record.doctorName,
     specialty: record.specialty,
     date: record.date,
