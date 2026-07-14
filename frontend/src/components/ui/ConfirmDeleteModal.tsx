@@ -9,11 +9,15 @@ export default function ConfirmDeleteModal({
   message,
   onCancel,
   onConfirm,
+  confirmLabel = "Delete",
+  confirmingLabel = "Deleting...",
 }: {
   title: string;
   message: string;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
+  confirmLabel?: string;
+  confirmingLabel?: string;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -52,7 +56,7 @@ export default function ConfirmDeleteModal({
               disabled={deleting}
               className="px-4 py-2 bg-error text-on-error rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity shadow-sm disabled:opacity-60"
             >
-              {deleting ? "Deleting..." : "Delete"}
+              {deleting ? confirmingLabel : confirmLabel}
             </button>
           </div>
         </div>
