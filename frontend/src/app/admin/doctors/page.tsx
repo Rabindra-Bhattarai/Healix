@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DoctorRecord, deleteDoctorRecord, getAllDoctors } from "@/lib/doctors";
+import Badge from "@/components/ui/Badge";
+import { DoctorRecord, deleteDoctorRecord, getAllDoctors, setDoctorBlocked } from "@/lib/doctors";
 import AddDoctorModal from "@/app/admin/doctors/_components/AddDoctorModal";
 import EditDoctorModal from "@/app/admin/doctors/_components/EditDoctorModal";
 import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
@@ -11,6 +12,7 @@ export default function AdminDoctorsPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<DoctorRecord | null>(null);
   const [deleting, setDeleting] = useState<DoctorRecord | null>(null);
+  const [blocking, setBlocking] = useState<DoctorRecord | null>(null);
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
 
@@ -131,9 +133,12 @@ export default function AdminDoctorsPage() {
                     <span className="material-symbols-outlined">person</span>
                   </div>
                   <div>
-                    <h4 className="font-body-md text-body-md font-semibold text-on-surface">
-                      {doctor.name}
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-body-md text-body-md font-semibold text-on-surface">
+                        {doctor.name}
+                      </h4>
+                      {doctor.isBlocked && <Badge variant="error">Blocked</Badge>}
+                    </div>
                     <p className="font-label-sm text-label-sm text-on-surface-variant">
                       {doctor.email ?? "—"}
                     </p>
@@ -163,6 +168,26 @@ export default function AdminDoctorsPage() {
                   >
                     <span className="material-symbols-outlined">delete</span>
                   </button>
+                  {doctor.isBlocked ? (
+                    <button
+                      title="Unblock"
+                      onClick={async () => {
+                        const updated = await setDoctorBlocked(doctor._id, false);
+                        setDoctors((prev) => prev.map((d) => (d._id === updated._id ? updated : d)));
+                      }}
+                      className="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-secondary/5 rounded-lg transition-colors"
+                    >
+                      <span className="material-symbols-outlined">lock_open</span>
+                    </button>
+                  ) : (
+                    <button
+                      title="Block"
+                      onClick={() => setBlocking(doctor)}
+                      className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/5 rounded-lg transition-colors"
+                    >
+                      <span className="material-symbols-outlined">block</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -194,6 +219,20 @@ export default function AdminDoctorsPage() {
             await deleteDoctorRecord(deleting._id);
             setDoctors((prev) => prev.filter((d) => d._id !== deleting._id));
             setDeleting(null);
+          }}
+        />
+      )}
+      {blocking && (
+        <ConfirmDeleteModal
+          title="Block Doctor"
+          message={`Are you sure you want to block ${blocking.name}? They will be immediately signed out and unable to log in, and will no longer appear in patient booking searches.`}
+          confirmLabel="Block Doctor"
+          confirmingLabel="Blocking..."
+          onCancel={() => setBlocking(null)}
+          onConfirm={async () => {
+            const updated = await setDoctorBlocked(blocking._id, true);
+            setDoctors((prev) => prev.map((d) => (d._id === updated._id ? updated : d)));
+            setBlocking(null);
           }}
         />
       )}
