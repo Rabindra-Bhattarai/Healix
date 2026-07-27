@@ -15,6 +15,7 @@ export interface VaultReportRecord {
   title: string;
   category: string;
   orderedByName: string;
+  date: string;
   dateLabel: string;
   status: "Ready" | "Pending";
   fileSize: string;
@@ -26,6 +27,7 @@ interface RawVaultReport {
   title: string;
   category: string;
   orderedByName: string;
+  date: string;
   dateLabel: string;
   status: "Ready" | "Pending";
   fileSize: string;
@@ -38,6 +40,7 @@ function toRecord(raw: RawVaultReport): VaultReportRecord {
     title: raw.title,
     category: raw.category,
     orderedByName: raw.orderedByName,
+    date: raw.date,
     dateLabel: raw.dateLabel,
     status: raw.status,
     fileSize: raw.fileSize,
@@ -47,6 +50,11 @@ function toRecord(raw: RawVaultReport): VaultReportRecord {
 
 export async function getMyVaultReports(): Promise<VaultReportRecord[]> {
   const { reports } = await api.get<{ reports: RawVaultReport[] }>("/vault/me");
+  return reports.map(toRecord);
+}
+
+export async function getMyAuthoredVaultReports(): Promise<VaultReportRecord[]> {
+  const { reports } = await api.get<{ reports: RawVaultReport[] }>("/vault/authored");
   return reports.map(toRecord);
 }
 

@@ -7,8 +7,8 @@ import { DoctorRecord, getAllDoctors } from "@/lib/doctors";
 import { DepartmentRecord, getDepartments } from "@/lib/departments";
 import { AdminAppointment, AppointmentStatus, getAllAppointmentsAdmin } from "@/lib/appointments";
 import { isToday } from "@/lib/doctorAppointments";
-import BarListChart from "@/app/admin/_components/BarListChart";
-import WeeklyTrendChart, { TrendPoint } from "@/app/admin/_components/WeeklyTrendChart";
+import BarListChart from "@/components/charts/BarListChart";
+import WeeklyTrendChart, { TrendPoint } from "@/components/charts/WeeklyTrendChart";
 
 const STATUS_VARIANT: Record<AppointmentStatus, "success" | "error" | "neutral"> = {
   Confirmed: "success",

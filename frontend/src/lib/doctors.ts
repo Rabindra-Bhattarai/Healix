@@ -10,6 +10,7 @@ export interface Doctor {
   location: string;
   description: string;
   tags?: string[];
+  avatarUrl?: string;
 }
 
 export interface DoctorRecord extends Doctor {

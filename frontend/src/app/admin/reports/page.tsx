@@ -58,7 +58,8 @@ export default function AdminReportsPage() {
                       {report.doctorName}
                     </h4>
                     <p className="font-label-sm text-label-sm text-on-surface-variant">
-                      Reported by {report.patient.name} ({report.patient.email}) &bull;{" "}
+                      Reported by {report.patient?.name ?? "a deleted account"}
+                      {report.patient ? ` (${report.patient.email})` : ""} &bull;{" "}
                       {new Date(report.createdAt).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",

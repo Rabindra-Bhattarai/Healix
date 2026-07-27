@@ -17,7 +17,9 @@ export interface DoctorAppointment {
 
 interface DoctorAppointmentRecord {
   _id: string;
-  patient: { _id: string; name: string; email: string; phone?: string };
+  // Populated by Mongoose - null if the referenced patient account no longer exists
+  // (e.g. it was deleted after the appointment was booked).
+  patient: { _id: string; name: string; email: string; phone?: string } | null;
   date: string;
   dateLabel: string;
   time: string;
@@ -29,10 +31,10 @@ interface DoctorAppointmentRecord {
 function toDoctorAppointment(record: DoctorAppointmentRecord): DoctorAppointment {
   return {
     id: record._id,
-    patientId: record.patient._id,
-    patientName: record.patient.name,
-    patientEmail: record.patient.email,
-    patientPhone: record.patient.phone,
+    patientId: record.patient?._id ?? "",
+    patientName: record.patient?.name ?? "Deleted account",
+    patientEmail: record.patient?.email ?? "—",
+    patientPhone: record.patient?.phone,
     date: record.date,
     dateLabel: record.dateLabel,
     time: record.time,

@@ -14,11 +14,11 @@ function slugify(name: string) {
 
 async function withUserContact<T extends { user: unknown }>(doctors: T[]) {
   const userIds = doctors.map((d) => d.user);
-  const users = await User.find({ _id: { $in: userIds } }, "email phone");
+  const users = await User.find({ _id: { $in: userIds } }, "email phone avatarUrl");
   const userMap = new Map(users.map((u) => [u._id.toString(), u]));
   return doctors.map((d) => {
     const user = userMap.get(String(d.user));
-    return { ...d, email: user?.email, phone: user?.phone };
+    return { ...d, email: user?.email, phone: user?.phone, avatarUrl: user?.avatarUrl };
   });
 }
 
@@ -91,14 +91,16 @@ export const createDoctor = asyncHandler(async (req: Request, res: Response) => 
   });
   await doctor.populate("department", "name slug");
 
-  res.status(201).json({ doctor: { ...doctor.toObject(), email: user.email, phone: user.phone } });
+  res
+    .status(201)
+    .json({ doctor: { ...doctor.toObject(), email: user.email, phone: user.phone, avatarUrl: user.avatarUrl } });
 });
 
 export const updateDoctor = asyncHandler(async (req: Request, res: Response) => {
   const doctor = await Doctor.findById(req.params.id);
   if (!doctor) return res.status(404).json({ message: "Doctor not found" });
 
-  const { phone, email, password, departmentSlug, ...doctorFields } = req.body ?? {};
+  const { phone, email, password, avatarUrl, departmentSlug, ...doctorFields } = req.body ?? {};
 
   if (departmentSlug) {
     const department = await Department.findOne({ slug: departmentSlug });
@@ -120,13 +122,16 @@ export const updateDoctor = asyncHandler(async (req: Request, res: Response) => 
   if (password) {
     userUpdates.passwordHash = await bcrypt.hash(password, 10);
   }
+  if (avatarUrl !== undefined) userUpdates.avatarUrl = avatarUrl;
   if (Object.keys(userUpdates).length > 0) {
     await User.findByIdAndUpdate(doctor.user, userUpdates);
   }
 
   await doctor.populate("department", "name slug");
-  const user = await User.findById(doctor.user, "email phone");
-  res.json({ doctor: { ...doctor.toObject(), email: user?.email, phone: user?.phone } });
+  const user = await User.findById(doctor.user, "email phone avatarUrl");
+  res.json({
+    doctor: { ...doctor.toObject(), email: user?.email, phone: user?.phone, avatarUrl: user?.avatarUrl },
+  });
 });
 
 export const deleteDoctor = asyncHandler(async (req: Request, res: Response) => {

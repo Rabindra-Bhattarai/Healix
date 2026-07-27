@@ -10,6 +10,13 @@ export const myVaultReports = asyncHandler(async (req: Request, res: Response) =
   res.json({ reports });
 });
 
+export const myAuthoredVaultReports = asyncHandler(async (req: Request, res: Response) => {
+  const doctor = await Doctor.findOne({ user: req.user!.id });
+  if (!doctor) return res.json({ reports: [] });
+  const reports = await VaultReport.find({ orderedBy: doctor._id }).sort({ date: -1 });
+  res.json({ reports });
+});
+
 export const getVaultReport = asyncHandler(async (req: Request, res: Response) => {
   const report = await VaultReport.findById(req.params.id);
   if (!report) return res.status(404).json({ message: "Report not found" });

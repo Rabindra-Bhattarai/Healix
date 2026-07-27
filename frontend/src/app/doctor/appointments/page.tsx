@@ -158,9 +158,10 @@ export default function DoctorAppointmentsPage() {
                     Cancel
                   </button>
                   <button
-                    title="Add Vault Report"
+                    title={appt.patientId ? "Add Vault Report" : "Patient account no longer exists"}
                     onClick={() => setAddingReportFor(appt)}
-                    className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                    disabled={!appt.patientId}
+                    className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                   >
                     <span className="material-symbols-outlined">note_add</span>
                   </button>
