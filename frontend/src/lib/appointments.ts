@@ -92,7 +92,9 @@ export interface AdminAppointment extends BookedAppointment {
 }
 
 interface AdminAppointmentRecord extends AppointmentRecord {
-  patient: { _id: string; name: string; email: string; phone?: string };
+  // Populated by Mongoose - null if the referenced patient account no longer exists
+  // (e.g. it was deleted after the appointment was booked).
+  patient: { _id: string; name: string; email: string; phone?: string } | null;
 }
 
 export async function getAllAppointmentsAdmin(filters?: {
@@ -109,9 +111,9 @@ export async function getAllAppointmentsAdmin(filters?: {
   );
   return appointments.map((record) => ({
     ...toBooked(record),
-    patientName: record.patient.name,
-    patientEmail: record.patient.email,
-    patientPhone: record.patient.phone,
+    patientName: record.patient?.name ?? "Deleted account",
+    patientEmail: record.patient?.email ?? "—",
+    patientPhone: record.patient?.phone,
   }));
 }
 

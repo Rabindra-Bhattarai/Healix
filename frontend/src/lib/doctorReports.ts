@@ -26,7 +26,8 @@ export interface DoctorReportRecord {
   photoUrl?: string;
   status: DoctorReportStatus;
   createdAt: string;
-  patient: { _id: string; name: string; email: string };
+  // Populated by Mongoose - null if the reporting patient's account no longer exists.
+  patient: { _id: string; name: string; email: string } | null;
 }
 
 export async function reportDoctor(input: {

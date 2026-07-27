@@ -129,8 +129,13 @@ export default function AdminDoctorsPage() {
                 className="flex flex-col gap-4 md:grid md:grid-cols-5 md:items-center px-5 sm:px-8 py-5 md:py-6 hover:bg-surface-container-low/30 transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    <span className="material-symbols-outlined">person</span>
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+                    {doctor.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={doctor.avatarUrl} alt={doctor.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="material-symbols-outlined">person</span>
+                    )}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">

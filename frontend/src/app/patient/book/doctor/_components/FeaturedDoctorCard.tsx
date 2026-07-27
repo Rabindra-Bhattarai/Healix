@@ -9,10 +9,15 @@ export default function FeaturedDoctorCard({ doctor }: { doctor: Doctor }) {
         Most Recommended
       </div>
       <div className="flex flex-col md:flex-row gap-6 sm:gap-8 mt-8 sm:mt-6">
-        <div className="w-28 h-28 sm:w-40 sm:h-40 shrink-0 rounded-2xl bg-surface-container-high flex items-center justify-center border border-outline-variant/40">
-          <span className="material-symbols-outlined text-on-surface-variant text-[64px]">
-            person
-          </span>
+        <div className="w-28 h-28 sm:w-40 sm:h-40 shrink-0 rounded-2xl bg-surface-container-high flex items-center justify-center border border-outline-variant/40 overflow-hidden">
+          {doctor.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={doctor.avatarUrl} alt={doctor.name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="material-symbols-outlined text-on-surface-variant text-[64px]">
+              person
+            </span>
+          )}
         </div>
         <div className="flex-1">
           <div className="flex flex-wrap justify-between items-start mb-4 gap-4">
